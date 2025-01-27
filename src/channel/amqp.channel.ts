@@ -1,5 +1,5 @@
-import { Channel } from '@nestjstools/messaging/channel/channel';
-import { AmqpChannelConfig, ChannelConfig } from '@nestjstools/messaging/config';
+import { Channel } from '@nestjstools/messaging';
+import { AmqpChannelConfig, ChannelConfig } from '@nestjstools/messaging';
 import { Connection } from 'rabbitmq-client';
 
 export class AmqpChannel implements Channel {

@@ -1,11 +1,43 @@
 {
   "name": "@nestjstools/messaging-rabbitmq-extension",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Extension to handle messages and dispatch them over AMQP protocol",
   "author": "Sebastian Iwanczyszyn",
   "private": false,
   "license": "MIT",
   "main": "lib/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/nestjstools/messaging-rabbitmq-extension/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nestjstools/messaging-rabbitmq-extension"
+  },
+  "keywords": [
+    "nestjs",
+    "distributed",
+    "messaging",
+    "nestjs-messaging",
+    "message-handling",
+    "message-bus",
+    "message-consumers",
+    "event-driven",
+    "asynchronous-messaging",
+    "event-bus",
+    "distributed-systems",
+    "microservices",
+    "message-channels",
+    "event-handlers",
+    "nestjs-tools",
+    "scalable-applications",
+    "synchronous-messaging",
+    "rabbitmq",
+    "rabbitmq-messages",
+    "nestjs-messaging-rabbitmq"
+  ],
   "files": [
     "lib",
     "LICENSE",
@@ -29,7 +61,7 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
-    "@nestjstools/messaging": "^1.0.2",
+    "@nestjstools/messaging": "^1.1.0",
     "rabbitmq-client": "^5.0.2",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"

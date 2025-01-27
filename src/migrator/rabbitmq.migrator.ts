@@ -1,6 +1,6 @@
 import { AmqpChannel } from '../channel/amqp.channel';
 import {Injectable} from "@nestjs/common";
-import {ExchangeType} from "@nestjstools/messaging/config";
+import {ExchangeType} from "@nestjstools/messaging";
 
 @Injectable()
 export class RabbitmqMigrator {

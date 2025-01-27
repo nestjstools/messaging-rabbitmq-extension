@@ -1,12 +1,12 @@
 import { AmqpChannel } from '../channel/amqp.channel';
 import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
-import { IMessagingConsumer } from '@nestjstools/messaging/consumer/i-messaging-consumer';
-import { ConsumerMessageDispatcher } from '@nestjstools/messaging/consumer/consumer-message-dispatcher';
-import { Channel } from '@nestjstools/messaging/channel/channel';
-import { ConsumerMessage } from '@nestjstools/messaging/consumer/consumer-message';
+import { IMessagingConsumer } from '@nestjstools/messaging';
+import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
+import { Channel } from '@nestjstools/messaging';
+import { ConsumerMessage } from '@nestjstools/messaging';
 import { Injectable } from '@nestjs/common';
-import { MessageConsumer } from '@nestjstools/messaging/dependency-injection/decorator';
-import { ConsumerDispatchedMessageError } from '@nestjstools/messaging/consumer/consumer-dispatched-message-error';
+import { MessageConsumer } from '@nestjstools/messaging';
+import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { RabbitmqMigrator } from '../migrator/rabbitmq.migrator';
 
 @Injectable()

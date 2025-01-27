@@ -1,5 +1,5 @@
-import { MessageOptions } from '@nestjstools/messaging/message/message-options';
-import { Middleware } from '@nestjstools/messaging/middleware/middleware';
+import { MessageOptions } from '@nestjstools/messaging';
+import { Middleware } from '@nestjstools/messaging';
 
 export class AmqpMessageOptions implements MessageOptions {
   constructor(
