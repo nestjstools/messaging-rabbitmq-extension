@@ -726,10 +726,10 @@
   dependencies:
     tslib "2.8.1"
 
-"@nestjstools/messaging@^1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@nestjstools/messaging/-/messaging-1.2.0.tgz#bee4dcaff58396107fef72842ae554ce120e8b8e"
-  integrity sha512-ck36cvCAfBzbBZDPSFEhPkbWBLgUirFfL7z5jlnzWsE092n9ItAw92iDOvo9fj08bXcCo4c7aGQHsyntFSafUA==
+"@nestjstools/messaging@^1.2.3":
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/@nestjstools/messaging/-/messaging-1.2.3.tgz#a91766e7d71e78ca05fe83ba2cd78b6139a95bfe"
+  integrity sha512-tkhgH7mAFcI0ttEu80nCMEgWpsiyVcs1gD+MLknuPhIWo7Dy2v6D/hAYOCqrxQcSTd1NkIeHVPsUrPfJs9qQ9w==
   dependencies:
     "@nestjs/common" "^10.0.0"
     "@nestjs/core" "^10.0.0"
