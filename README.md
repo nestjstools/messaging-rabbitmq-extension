@@ -50,18 +50,18 @@ import {MessagerRabbitmqExtensionModule} from "@nestjstools/messager-rabbitmq-ex
             new AmqpChannelConfig({
                name: 'amqp-command',
                connectionUri: 'amqp://guest:guest@localhost:5672/',
-               exchangeName: 'my_app.exchange',
+               exchangeName: 'my_app_command.exchange',
                bindingKeys: ['my_app.command.#'],
                exchangeType: ExchangeType.TOPIC,
                middlewares: [],
                queue: 'my_app.command',
-               autoCreate: true, // create exchange, queue & bind keys
+               autoCreate: true, // Create exchange, queue & bind keys
             }),
             new AmqpChannelConfig({
                name: 'amqp-event',
                connectionUri: 'amqp://guest:guest@localhost:5672/',
-               exchangeName: 'my_app.exchange',
-               bindingKeys: ['my_app.event.#'],
+               exchangeName: 'my_app_event.exchange',
+               bindingKeys: ['my_app_event.#'],
                exchangeType: ExchangeType.TOPIC,
                queue: 'my_app.event',
                avoidErrorsForNotExistedHandlers: true, // We can avoid errors if we don't have handler yet for the event
