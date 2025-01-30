@@ -1,19 +1,13 @@
 import { Channel } from '@nestjstools/messaging';
-import { AmqpChannelConfig, ChannelConfig } from '@nestjstools/messaging';
+import { AmqpChannelConfig } from '@nestjstools/messaging';
 import { Connection } from 'rabbitmq-client';
-import { InvalidChannelConfigException } from '@nestjstools/messaging';
 
-export class AmqpChannel extends Channel {
+export class AmqpChannel extends Channel<AmqpChannelConfig> {
   public readonly connection: Connection;
   public readonly config: AmqpChannelConfig;
 
-  constructor(config: ChannelConfig) {
-    if (!(config instanceof AmqpChannelConfig)) {
-      throw new InvalidChannelConfigException(AmqpChannelConfig.name);
-    }
-
+  constructor(config: AmqpChannelConfig) {
     super(config);
-
     this.connection = new Connection(config.connectionUri);
   }
 }
