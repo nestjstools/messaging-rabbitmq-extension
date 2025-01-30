@@ -29,7 +29,10 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer {
       queueOptions: { durable: true },
     }, async (msg): Promise<void> => {
       const rabbitMqMessage = msg as RabbitMQMessage;
-        dispatcher.dispatch(new ConsumerMessage(rabbitMqMessage.body, rabbitMqMessage.headers[RABBITMQ_HEADER_ROUTING_KEY] ?? rabbitMqMessage.routingKey));
+      const routingKey =
+        rabbitMqMessage.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ?? rabbitMqMessage.routingKey;
+
+        dispatcher.dispatch(new ConsumerMessage(rabbitMqMessage.body, routingKey));
     });
 
     return Promise.resolve();
