@@ -1,6 +1,6 @@
 {
   "name": "@nestjstools/messaging-rabbitmq-extension",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Extension to handle messages and dispatch them over AMQP protocol",
   "author": "Sebastian Iwanczyszyn",
   "private": false,
@@ -22,8 +22,7 @@
     "distributed",
     "messaging",
     "nestjs-messaging",
-    "event-bus",
-    "distributed-systems",
+    "message-bus",
     "microservices",
     "rabbitmq",
     "rabbitmq-messages",
@@ -59,7 +58,7 @@
     "rxjs": "^7.x"
   },
   "devDependencies": {
-    "@nestjstools/messaging": "^1.6.0",
+    "@nestjstools/messaging": "^1.7.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/cli": "^11.0.0",
