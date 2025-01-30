@@ -31,11 +31,12 @@ export class AmqpMessageBus implements IMessageBus {
     messageBuilder.addHeader(RABBITMQ_HEADER_ROUTING_KEY, message.messageRoutingKey);
 
     const amqpMessage = messageBuilder.buildMessage();
-
-    await this.connection.createPublisher().send(
+    const publisher = await this.connection.createPublisher();
+    await publisher.send(
       amqpMessage.envelope,
       amqpMessage.message,
     );
+    await publisher.close();
   }
 
   private createMessageBuilderWhenUndefined(message: RoutingMessage): AmqpMessageBuilder {
