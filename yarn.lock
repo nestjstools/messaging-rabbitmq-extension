@@ -880,10 +880,10 @@
   dependencies:
     tslib "2.8.1"
 
-"@nestjstools/messaging@^1.7.0":
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/@nestjstools/messaging/-/messaging-1.7.0.tgz#a17cf7e894c95c4d5641b71d9e0563404a7d507c"
-  integrity sha512-NhEDfgA1fbJ/9SPeji3GoH+KHA5DBIbbT+xi08Fis/9agWBgWyEtbq/kdtUDp/av9uy5TSedYbB8t+96vvZJww==
+"@nestjstools/messaging@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@nestjstools/messaging/-/messaging-2.0.1.tgz#792d501e9707695089aa1218945ebab09d554e64"
+  integrity sha512-ZtuQdHLIi71AoOBawOjFK+JUzCbDdznbaSXpMfs47A3xb3tcTbzpviA00cyDPe/xHjnyNxlaG6+foevoBFLfug==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
