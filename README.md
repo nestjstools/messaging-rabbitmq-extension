@@ -5,13 +5,13 @@ A NestJS library for managing asynchronous and synchronous messages with support
 ## Installation
 
 ```bash
-npm install @nestjstools/messaging-rabbitmq-extension rabbitmq-client
+npm install @nestjstools/messaging @nestjstools/messaging-rabbitmq-extension 
 ```
 
 or
 
 ```bash
-yarn add @nestjstools/messaging-rabbitmq-extension rabbitmq-client
+yarn add @nestjstools/messaging @nestjstools/messaging-rabbitmq-extension
 ```
 ## RabbitMQ Integration: Messaging Configuration Example
 
