@@ -7,6 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { MessageConsumer } from '@nestjstools/messaging';
 import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { RabbitmqMigrator } from '../migrator/rabbitmq.migrator';
+import { Buffer } from 'buffer';
 
 @Injectable()
 @MessageConsumer(AmqpChannel)
@@ -24,16 +25,33 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
       queueOptions: { durable: true },
     }, async (msg): Promise<void> => {
       const rabbitMqMessage = msg as RabbitMQMessage;
+
+      let message = rabbitMqMessage.body;
+      if (Buffer.isBuffer(message)) {
+        const messageContent = message.toString();
+        message = JSON.parse(messageContent);
+      }
+
       const routingKey =
         rabbitMqMessage.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ?? rabbitMqMessage.routingKey;
 
-        dispatcher.dispatch(new ConsumerMessage(rabbitMqMessage.body, routingKey));
+        dispatcher.dispatch(new ConsumerMessage(message, routingKey));
     });
 
     return Promise.resolve();
   }
 
   onError(errored: ConsumerDispatchedMessageError, channel: AmqpChannel): Promise<void> {
+    if (channel.config.deadLetterQueueFeature) {
+      const publisher = channel.connection.createPublisher();
+      const envelope = {
+        headers: { 'messaging-routing-key': errored.dispatchedConsumerMessage.routingKey },
+        exchange: 'dead_letter.exchange',
+        routingKey: `${channel.config.queue}_dead_letter`
+      };
+      publisher.send(envelope, errored.dispatchedConsumerMessage.message);
+    }
+
     return Promise.resolve();
   }
 }
