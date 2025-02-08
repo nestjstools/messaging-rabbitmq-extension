@@ -1,6 +1,6 @@
 {
   "name": "@nestjstools/messaging-rabbitmq-extension",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Extension to handle messages and dispatch them over AMQP protocol",
   "author": "Sebastian Iwanczyszyn",
   "private": false,
@@ -58,7 +58,7 @@
     "rxjs": "^7.x"
   },
   "devDependencies": {
-    "@nestjstools/messaging": "^2.0.1",
+    "@nestjstools/messaging": "^2.1.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/cli": "^11.0.0",

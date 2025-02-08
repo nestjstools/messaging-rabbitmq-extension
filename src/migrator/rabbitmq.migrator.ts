@@ -15,17 +15,14 @@ export class RabbitmqMigrator {
       type: channel.config.exchangeType,
     });
 
-    if (channel.config.deadLetterQueueFeature) {
+    await channel.connection.queueDeclare({ durable: true, queue: channel.config.queue });
+
+    if (channel.config.deadLetterQueueFeature === true) {
       await channel.connection.exchangeDeclare({
         durable: true,
         exchange: 'dead_letter.exchange',
         type: ExchangeType.DIRECT,
       });
-    }
-
-    await channel.connection.queueDeclare({ durable: true, queue: channel.config.queue });
-
-    if (channel.config.deadLetterQueueFeature) {
       await channel.connection.queueDeclare({ durable: true, queue: `${channel.config.queue}_dead_letter` });
       await channel.connection.queueBind({
         queue: `${channel.config.queue}_dead_letter`,
