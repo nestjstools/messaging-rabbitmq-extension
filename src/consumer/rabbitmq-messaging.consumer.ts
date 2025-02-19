@@ -3,7 +3,7 @@ import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
 import { IMessagingConsumer } from '@nestjstools/messaging';
 import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
 import { ConsumerMessage } from '@nestjstools/messaging';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { MessageConsumer } from '@nestjstools/messaging';
 import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { RabbitmqMigrator } from '../migrator/rabbitmq.migrator';
@@ -11,7 +11,9 @@ import { Buffer } from 'buffer';
 
 @Injectable()
 @MessageConsumer(AmqpChannel)
-export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel> {
+export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel>, OnApplicationShutdown {
+  private channel?: AmqpChannel = undefined;
+
   constructor(
     private readonly rabbitMqMigrator: RabbitmqMigrator,
   ) {
@@ -19,6 +21,7 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
 
   async consume(dispatcher: ConsumerMessageDispatcher, channel: AmqpChannel): Promise<void> {
     await this.rabbitMqMigrator.run(channel);
+    this.channel = channel;
 
     channel.connection.createConsumer({
       queue: channel.config.queue,
@@ -53,6 +56,12 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
     }
 
     return Promise.resolve();
+  }
+
+  async onApplicationShutdown(signal?: string): Promise<any> {
+    if (this.channel) {
+      await this.channel.connection.close();
+    }
   }
 }
 

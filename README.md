@@ -1,3 +1,7 @@
+<p align="center">
+    <image src="nestjstools-logo.png" width="400">
+</p>
+
 # @nestjstools/messaging-rabbitmq-extension
 
 A NestJS library for managing asynchronous and synchronous messages with support for buses, handlers, channels, and consumers. This library simplifies building scalable and decoupled applications by facilitating robust message handling pipelines while ensuring flexibility and reliability.
