@@ -8,7 +8,6 @@ import {IMessageBus} from "@nestjstools/messaging";
 @Injectable()
 @MessageBusFactory(AmqpChannel)
 export class AmqpMessageBusFactory implements IMessageBusFactory<AmqpChannel> {
-
   create(channel: AmqpChannel): IMessageBus {
     return new AmqpMessageBus(channel);
   }
