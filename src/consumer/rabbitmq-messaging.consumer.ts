@@ -44,7 +44,7 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
     return Promise.resolve();
   }
 
-  onError(errored: ConsumerDispatchedMessageError, channel: AmqpChannel): Promise<void> {
+  async onError(errored: ConsumerDispatchedMessageError, channel: AmqpChannel): Promise<void> {
     if (channel.config.deadLetterQueueFeature) {
       const publisher = channel.connection.createPublisher();
       const envelope = {
@@ -52,7 +52,8 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
         exchange: 'dead_letter.exchange',
         routingKey: `${channel.config.queue}_dead_letter`
       };
-      publisher.send(envelope, errored.dispatchedConsumerMessage.message);
+      await publisher.send(envelope, errored.dispatchedConsumerMessage.message);
+      await publisher.close();
     }
 
     return Promise.resolve();
