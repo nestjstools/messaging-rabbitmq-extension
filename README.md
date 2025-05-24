@@ -123,31 +123,50 @@ Here's a more concise and clear version of your explanation:
 ### Direct Exchange
 Ensure your queue has defined binding keys, as messages will be routed to queues based on these keys. If no binding keys are defined, the routing key in RabbitMQ will default to the routing key specified in the handler.
 
+### Fanout Exchange
+The Fanout Exchange broadcasts messages to all bound queues, ignoring the routing key. This type of exchange is useful for scenarios where you need to distribute the same message to multiple consumers.
+
 ### Additional
 * You can override message routing using `AmqpMessageOptions`. This allows sending a message to a specified exchange and routing it with a custom key.
     ```typescript
     this.messageBus.dispatch(new RoutingMessage(new SendMessage('Hello Rabbit!'), 'app.command.execute', new AmqpMessageOptions('exchange_name', 'rabbitmq_routing_key_to_queue')));
     ```
-
 ---
 
+## 📨 Communicating Beyond a NestJS Application (Cross-Language Messaging)
+
+### To enable communication with a Handler from services written in other languages, follow these steps:
+
+1. **Publish a Message to the queue**
+
+2. **Include the Routing Key Header**
+   Your message **must** include a header attribute named `messaging-routing-key`.
+   The value should correspond to the routing key defined in your NestJS message handler:
+   ```ts
+   @MessageHandler('my_app_command.create_user') // <-- Use this value as the routing key
+   ```
+
+3. **You're Done!**
+   Once the message is published with the correct routing key, it will be automatically routed to the appropriate handler within the NestJS application.
+---
 ## Configuration options
 
 ### AmqpChannel
 
 #### **AmqpChannelConfig**
 
-| **Property**                           | **Description**                                                                  | **Default Value** |
-|----------------------------------------|----------------------------------------------------------------------------------|-------------------|
-| **`name`**                             | Name of the AMQP channel (e.g., `'amqp-command'`).                               |                   |
-| **`connectionUri`**                    | URI for the RabbitMQ connection, such as `'amqp://guest:guest@localhost:5672/'`. |                   |
-| **`exchangeName`**                     | The AMQP exchange name (e.g., `'my_app.exchange'`).                              |                   |
-| **`bindingKeys`**                      | The routing keys to bind to (e.g., `['my_app.command.#']`).                      | `[]`              |
-| **`exchangeType`**                     | Type of the RabbitMQ exchange (e.g., `TOPIC`).                                   |                   |
-| **`queue`**                            | The AMQP queue to consume messages from (e.g., `'my_app.command'`).              |                   |
-| **`autoCreate`**                       | Automatically creates the exchange, queue, and bindings if they don’t exist.     | `true`            |
-| **`enableConsumer`**                   | Enables or disables the consumer for this channel.                               | `true`            |
-| **`avoidErrorsForNotExistedHandlers`** | Avoid errors if no handler is available for the message.                         | `false`           |
+| **Property**                           | **Description**                                                                            | **Default Value** |
+|----------------------------------------|--------------------------------------------------------------------------------------------|-------------------|
+| **`name`**                             | Name of the AMQP channel (e.g., `'amqp-command'`).                                         |                   |
+| **`connectionUri`**                    | URI for the RabbitMQ connection, such as `'amqp://guest:guest@localhost:5672/'`.           |                   |
+| **`exchangeName`**                     | The AMQP exchange name (e.g., `'my_app.exchange'`).                                        |                   |
+| **`bindingKeys`**                      | The routing keys to bind to (e.g., `['my_app.command.#']`).                                | `[]`              |
+| **`exchangeType`**                     | Type of the RabbitMQ exchange (e.g., `TOPIC`).                                             |                   |
+| **`queue`**                            | The AMQP queue to consume messages from (e.g., `'my_app.command'`).                        |                   |
+| **`autoCreate`**                       | Automatically creates the exchange, queue, and bindings if they don’t exist.               | `true`            |
+| **`enableConsumer`**                   | Enables or disables the consumer for this channel.                                         | `true`            |
+| **`avoidErrorsForNotExistedHandlers`** | Avoid errors if no handler is available for the message.                                   | `false`           |
+| **`deadLetterQueueFeature`**           | Enables a dead-letter queue to capture messages that could not be processed due to errors. | `false`           |
 
 This table provides a structured overview of the **`MessagingModule.forRoot`** configuration, with details about each property within **buses** and **channels** and their corresponding default values.
 
