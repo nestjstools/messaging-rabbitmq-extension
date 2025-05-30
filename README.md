@@ -6,6 +6,14 @@
 
 A NestJS library for managing asynchronous and synchronous messages with support for buses, handlers, channels, and consumers. This library simplifies building scalable and decoupled applications by facilitating robust message handling pipelines while ensuring flexibility and reliability.
 
+---
+
+## Documentation
+
+https://nestjstools.gitbook.io/nestjstools-messaging-docs
+
+---
+
 ## Installation
 
 ```bash
@@ -169,5 +177,3 @@ The Fanout Exchange broadcasts messages to all bound queues, ignoring the routin
 | **`deadLetterQueueFeature`**           | Enables a dead-letter queue to capture messages that could not be processed due to errors. | `false`           |
 
 This table provides a structured overview of the **`MessagingModule.forRoot`** configuration, with details about each property within **buses** and **channels** and their corresponding default values.
-
----
