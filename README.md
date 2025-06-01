@@ -33,11 +33,11 @@ yarn add @nestjstools/messaging @nestjstools/messaging-rabbitmq-extension
 import {MessagingModule} from '@nestjstools/messaging';
 import {InMemoryChannelConfig, AmqpChannelConfig, ExchangeType} from '@nestjstools/messaging/channels';
 import {SendMessageHandler} from './handlers/send-message.handler';
-import {MessagerRabbitmqExtensionModule} from "@nestjstools/messager-rabbitmq-extension.module";
+import {MessagingRabbitmqExtensionModule} from '@nestjstools/messaging-rabbitmq-extension';
 
 @Module({
    imports: [
-      MessagerRabbitmqExtensionModule,
+      MessagingRabbitmqExtensionModule,
       MessagingModule.forRoot({
          messageHandlers: [SendMessageHandler],
          buses: [
