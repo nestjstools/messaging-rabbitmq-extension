@@ -26,6 +26,7 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
     channel.connection.createConsumer({
       queue: channel.config.queue,
       queueOptions: { durable: true },
+      requeue: false,
     }, async (msg): Promise<void> => {
       const rabbitMqMessage = msg as RabbitMQMessage;
 
@@ -50,7 +51,7 @@ export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel
       const envelope = {
         headers: { 'messaging-routing-key': errored.dispatchedConsumerMessage.routingKey },
         exchange: 'dead_letter.exchange',
-        routingKey: `${channel.config.queue}_dead_letter`
+        routingKey: `${channel.config.queue}_dead_letter`,
       };
       await publisher.send(envelope, errored.dispatchedConsumerMessage.message);
       await publisher.close();
