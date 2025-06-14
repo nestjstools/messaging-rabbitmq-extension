@@ -104,7 +104,7 @@ export class AppController {
 
   @Get('/rabbitmq')
   createUser(): string {
-    this.commandBus.dispatch(new RoutingMessage(new CreateUser('John FROM pubsub'), 'my_app_command.create_user'));
+    this.commandBus.dispatch(new RoutingMessage(new CreateUser('John'), 'my_app_command.create_user'));
 
     return 'Message sent';
   }
