@@ -39,7 +39,6 @@ import {MessagingRabbitmqExtensionModule} from '@nestjstools/messaging-rabbitmq-
    imports: [
       MessagingRabbitmqExtensionModule,
       MessagingModule.forRoot({
-         messageHandlers: [SendMessageHandler],
          buses: [
             {
                name: 'message.bus',
