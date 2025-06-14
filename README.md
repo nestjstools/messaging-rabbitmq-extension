@@ -31,7 +31,7 @@ yarn add @nestjstools/messaging @nestjstools/messaging-rabbitmq-extension
 
 ```typescript
 import {MessagingModule} from '@nestjstools/messaging';
-import {InMemoryChannelConfig, AmqpChannelConfig, ExchangeType} from '@nestjstools/messaging/channels';
+import {InMemoryChannelConfig, AmqpChannelConfig, ExchangeType} from '@nestjstools/messaging';
 import {SendMessageHandler} from './handlers/send-message.handler';
 import {MessagingRabbitmqExtensionModule} from '@nestjstools/messaging-rabbitmq-extension';
 
@@ -90,37 +90,44 @@ export class AppModule {
 
 ---
 
-### Key Features:
+## Dispatch messages via bus (example)
 
-1. **Multiple Message Buses**:
-    - Configure distinct buses for **in-memory**, **commands**, and **events**:
-        - `message.bus` (in-memory).
-        - `command.message-bus` (AMQP command processing).
-        - `event.message-bus` (AMQP event processing).
+```typescript
+import { Controller, Get } from '@nestjs/common';
+import { CreateUser } from './application/command/create-user';
+import { IMessageBus, MessageBus, RoutingMessage } from '@nestjstools/messaging';
 
-2. **In-Memory Channel**:
-    - Simple and lightweight channel suitable for non-persistent messaging or testing purposes.
+@Controller()
+export class AppController {
+  constructor(
+    @MessageBus('command-bus') private commandBus: IMessageBus,
+  ) {}
 
-3. **AMQP Channels**:
-    - Fully integrated RabbitMQ channel configuration using `AmqpChannelConfig`.
+  @Get('/rabbitmq')
+  createUser(): string {
+    this.commandBus.dispatch(new RoutingMessage(new CreateUser('John FROM pubsub'), 'my_app_command.create_user'));
 
-4. **Channel Details**:
-    - `connectionUri`: Specifies the RabbitMQ server connection.
-    - `exchangeName`: The AMQP exchange to publish or consume messages from.
-    - `bindingKeys`: Define message routing patterns using wildcards (e.g., `my_app.command.#`).
-    - `exchangeType`: Supports RabbitMQ exchange types such as `TOPIC`.
-    - `queue`: Specify a RabbitMQ queue to consume messages from.
-    - `autoCreate`: Automatically creates the exchange, queue, and bindings if they don’t exist.
+    return 'Message sent';
+  }
+}
+```
 
-5. **Error Handling**:
-    - Use `avoidErrorsForNotExistedHandlers` in `amqp-event` to gracefully handle missing handlers for event messages.
+### Handler for your message
 
-6. **Debug Mode**:
-    - Enable `debug: true` to assist in monitoring and troubleshooting messages.
+```typescript
+import { CreateUser } from '../create-user';
+import { IMessageBus, IMessageHandler, MessageBus, MessageHandler, RoutingMessage, DenormalizeMessage } from '@nestjstools/messaging';
 
-This configuration provides a solid foundation for integrating RabbitMQ as part of your messaging system. It facilitates the decoupling of commands, events, and in-memory operations, ensuring reliable and scalable communication across distributed systems.
+//This handler will received your rabbitmq messages with given routing-key
+@MessageHandler('my_app_command.create_user')
+export class CreateUserHandler implements IMessageHandler<CreateUser>{
 
----
+  handle(message: CreateUser): Promise<void> {
+    console.log(message);
+    // TODO Logic there
+  }
+}
+```
 
 ## Mapping Messages in RabbitMQ Channel
 
