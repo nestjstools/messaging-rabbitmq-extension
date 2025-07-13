@@ -30,10 +30,14 @@ yarn add @nestjstools/messaging @nestjstools/messaging-rabbitmq-extension
 ---
 
 ```typescript
-import {MessagingModule} from '@nestjstools/messaging';
-import {InMemoryChannelConfig, AmqpChannelConfig, ExchangeType} from '@nestjstools/messaging';
+import {MessagingModule, InMemoryChannelConfig} from '@nestjstools/messaging';
 import {SendMessageHandler} from './handlers/send-message.handler';
-import {MessagingRabbitmqExtensionModule} from '@nestjstools/messaging-rabbitmq-extension';
+import {
+  ExchangeType,
+  MessagingRabbitmqExtensionModule,
+  RmqChannelConfig,
+} from '@nestjstools/messaging-rabbitmq-extension';
+
 
 @Module({
    imports: [
@@ -58,7 +62,7 @@ import {MessagingRabbitmqExtensionModule} from '@nestjstools/messaging-rabbitmq-
                name: 'my-channel',
                middlewares: [],
             }),
-            new AmqpChannelConfig({
+            new RmqChannelConfig({
                name: 'amqp-command',
                connectionUri: 'amqp://guest:guest@localhost:5672/',
                exchangeName: 'my_app_command.exchange',
@@ -68,7 +72,7 @@ import {MessagingRabbitmqExtensionModule} from '@nestjstools/messaging-rabbitmq-
                queue: 'my_app.command',
                autoCreate: true, // Create exchange, queue & bind keys
             }),
-            new AmqpChannelConfig({
+            new RmqChannelConfig({
                name: 'amqp-event',
                connectionUri: 'amqp://guest:guest@localhost:5672/',
                exchangeName: 'my_app_event.exchange',
