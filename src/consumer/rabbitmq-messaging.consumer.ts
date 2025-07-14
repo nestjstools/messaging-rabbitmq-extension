@@ -11,45 +11,56 @@ import { Buffer } from 'buffer';
 
 @Injectable()
 @MessageConsumer(AmqpChannel)
-export class RabbitmqMessagingConsumer implements IMessagingConsumer<AmqpChannel>, OnApplicationShutdown {
+export class RabbitmqMessagingConsumer
+  implements IMessagingConsumer<AmqpChannel>, OnApplicationShutdown
+{
   private channel?: AmqpChannel = undefined;
 
-  constructor(
-    private readonly rabbitMqMigrator: RabbitmqMigrator,
-  ) {
-  }
+  constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {}
 
-  async consume(dispatcher: ConsumerMessageDispatcher, channel: AmqpChannel): Promise<void> {
+  async consume(
+    dispatcher: ConsumerMessageDispatcher,
+    channel: AmqpChannel,
+  ): Promise<void> {
     await this.rabbitMqMigrator.run(channel);
     this.channel = channel;
 
-    channel.connection.createConsumer({
-      queue: channel.config.queue,
-      queueOptions: { durable: true },
-      requeue: false,
-    }, async (msg): Promise<void> => {
-      const rabbitMqMessage = msg as RabbitMQMessage;
+    channel.connection.createConsumer(
+      {
+        queue: channel.config.queue,
+        queueOptions: { durable: true },
+        requeue: false,
+      },
+      async (msg): Promise<void> => {
+        const rabbitMqMessage = msg as RabbitMQMessage;
 
-      let message = rabbitMqMessage.body;
-      if (Buffer.isBuffer(message)) {
-        const messageContent = message.toString();
-        message = JSON.parse(messageContent);
-      }
+        let message = rabbitMqMessage.body;
+        if (Buffer.isBuffer(message)) {
+          const messageContent = message.toString();
+          message = JSON.parse(messageContent);
+        }
 
-      const routingKey =
-        rabbitMqMessage.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ?? rabbitMqMessage.routingKey;
+        const routingKey =
+          rabbitMqMessage.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ??
+          rabbitMqMessage.routingKey;
 
         dispatcher.dispatch(new ConsumerMessage(message, routingKey));
-    });
+      },
+    );
 
     return Promise.resolve();
   }
 
-  async onError(errored: ConsumerDispatchedMessageError, channel: AmqpChannel): Promise<void> {
+  async onError(
+    errored: ConsumerDispatchedMessageError,
+    channel: AmqpChannel,
+  ): Promise<void> {
     if (channel.config.deadLetterQueueFeature) {
       const publisher = channel.connection.createPublisher();
       const envelope = {
-        headers: { 'messaging-routing-key': errored.dispatchedConsumerMessage.routingKey },
+        headers: {
+          'messaging-routing-key': errored.dispatchedConsumerMessage.routingKey,
+        },
         exchange: 'dead_letter.exchange',
         routingKey: `${channel.config.queue}_dead_letter`,
       };

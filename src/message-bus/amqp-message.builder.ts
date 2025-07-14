@@ -1,14 +1,12 @@
 import { Envelope } from 'rabbitmq-client';
 
 export class AmqpMessageBuilder {
-
   private constructor(
     private exchangeName: string = undefined,
     private routingKey: string = undefined,
     private headers: { [key: string]: string } = undefined,
     private message: object = undefined,
-  ) {
-  }
+  ) {}
 
   static create(): AmqpMessageBuilder {
     return new AmqpMessageBuilder();
@@ -62,9 +60,9 @@ export class AmqpMessageBuilder {
         exchange: this.exchangeName,
         routingKey: this.routingKey,
         headers: this.headers,
-      }
-    }
-  };
+      },
+    };
+  }
 }
 
 interface AmqpMessage {
