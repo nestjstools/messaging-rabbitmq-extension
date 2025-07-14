@@ -10,20 +10,26 @@ export class RmqChannelConfig extends ChannelConfig {
   public readonly deadLetterQueueFeature?: boolean;
 
   constructor({
-                name,
-                connectionUri,
-                exchangeName,
-                exchangeType,
-                queue,
-                enableConsumer,
-                bindingKeys,
-                autoCreate,
-                deadLetterQueueFeature,
-                avoidErrorsForNotExistedHandlers,
-                middlewares,
-                normalizer,
-              }: RmqChannelConfig) {
-    super(name, avoidErrorsForNotExistedHandlers, middlewares, enableConsumer, normalizer)
+    name,
+    connectionUri,
+    exchangeName,
+    exchangeType,
+    queue,
+    enableConsumer,
+    bindingKeys,
+    autoCreate,
+    deadLetterQueueFeature,
+    avoidErrorsForNotExistedHandlers,
+    middlewares,
+    normalizer,
+  }: RmqChannelConfig) {
+    super(
+      name,
+      avoidErrorsForNotExistedHandlers,
+      middlewares,
+      enableConsumer,
+      normalizer,
+    );
     this.connectionUri = connectionUri;
     this.exchangeName = exchangeName;
     this.exchangeType = exchangeType;

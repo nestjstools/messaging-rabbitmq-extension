@@ -1,6 +1,10 @@
 import { AmqpChannel } from './amqp.channel';
-import {Injectable} from "@nestjs/common";
-import {AmqpChannelConfig, ChannelFactory, IChannelFactory} from "@nestjstools/messaging";
+import { Injectable } from '@nestjs/common';
+import {
+  AmqpChannelConfig,
+  ChannelFactory,
+  IChannelFactory,
+} from '@nestjstools/messaging';
 
 /**
  * @deprecated Use `RmqChannelFactory`

@@ -12,34 +12,39 @@ import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
 export class AmqpMessageBus implements IMessageBus {
   private readonly connection: Connection;
 
-  constructor(
-    private readonly amqpChanel: AmqpChannel,
-  ) {
+  constructor(private readonly amqpChanel: AmqpChannel) {
     this.connection = amqpChanel.connection;
   }
 
   async dispatch(message: RoutingMessage): Promise<object | void> {
-
-    if (message.messageOptions !== undefined && !(message.messageOptions instanceof AmqpMessageOptions)) {
-      throw new Error(`Message options must be a ${AmqpMessageOptions.name} object`);
+    if (
+      message.messageOptions !== undefined &&
+      !(message.messageOptions instanceof AmqpMessageOptions)
+    ) {
+      throw new Error(
+        `Message options must be a ${AmqpMessageOptions.name} object`,
+      );
     }
 
-    const messageBuilder: AmqpMessageBuilder = message.messageOptions === undefined
-      ? this.createMessageBuilderWhenUndefined(message)
-      : this.createMessageBuilderWhenDefined(message);
+    const messageBuilder: AmqpMessageBuilder =
+      message.messageOptions === undefined
+        ? this.createMessageBuilderWhenUndefined(message)
+        : this.createMessageBuilderWhenDefined(message);
 
-    messageBuilder.addHeader(RABBITMQ_HEADER_ROUTING_KEY, message.messageRoutingKey);
+    messageBuilder.addHeader(
+      RABBITMQ_HEADER_ROUTING_KEY,
+      message.messageRoutingKey,
+    );
 
     const amqpMessage = messageBuilder.buildMessage();
     const publisher = await this.connection.createPublisher();
-    await publisher.send(
-      amqpMessage.envelope,
-      amqpMessage.message,
-    );
+    await publisher.send(amqpMessage.envelope, amqpMessage.message);
     await publisher.close();
   }
 
-  private createMessageBuilderWhenUndefined(message: RoutingMessage): AmqpMessageBuilder {
+  private createMessageBuilderWhenUndefined(
+    message: RoutingMessage,
+  ): AmqpMessageBuilder {
     const messageBuilder = AmqpMessageBuilder.create();
 
     messageBuilder
@@ -57,12 +62,16 @@ export class AmqpMessageBus implements IMessageBus {
     return messageBuilder;
   }
 
-  private createMessageBuilderWhenDefined(message: RoutingMessage): AmqpMessageBuilder {
+  private createMessageBuilderWhenDefined(
+    message: RoutingMessage,
+  ): AmqpMessageBuilder {
     const options = message.messageOptions as AmqpMessageOptions;
     const messageBuilder = AmqpMessageBuilder.create();
     messageBuilder
       .withMessage(message.message)
-      .withExchangeName(options.exchangeName ?? this.amqpChanel.config.exchangeName)
+      .withExchangeName(
+        options.exchangeName ?? this.amqpChanel.config.exchangeName,
+      )
       .withRoutingKey(options.routingKey ?? this.getRoutingKey(message))
       .withHeaders(options.headers);
 
@@ -72,7 +81,8 @@ export class AmqpMessageBus implements IMessageBus {
   private getRoutingKey(message: RoutingMessage): string {
     return this.amqpChanel.config.bindingKeys !== undefined
       ? this.amqpChanel.config.bindingKeys.length > 0
-        ? this.amqpChanel.config.bindingKeys[0] : message.messageRoutingKey
+        ? this.amqpChanel.config.bindingKeys[0]
+        : message.messageRoutingKey
       : message.messageRoutingKey;
   }
 }
