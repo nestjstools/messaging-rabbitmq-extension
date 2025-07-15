@@ -12,7 +12,7 @@ import { Buffer } from 'buffer';
 @Injectable()
 @MessageConsumer(AmqpChannel)
 export class RabbitmqMessagingConsumer
-  implements IMessagingConsumer<AmqpChannel>, OnApplicationShutdown
+  implements IMessagingConsumer<AmqpChannel>
 {
   private channel?: AmqpChannel = undefined;
 
@@ -69,12 +69,6 @@ export class RabbitmqMessagingConsumer
     }
 
     return Promise.resolve();
-  }
-
-  async onApplicationShutdown(signal?: string): Promise<any> {
-    if (this.channel) {
-      await this.channel.connection.close();
-    }
   }
 }
 
