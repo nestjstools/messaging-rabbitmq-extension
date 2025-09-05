@@ -22,7 +22,7 @@ export class RabbitmqMessagingConsumer
     dispatcher: ConsumerMessageDispatcher,
     channel: AmqpChannel,
   ): Promise<void> {
-    await channel.init()
+    await channel.init();
     this.channel = channel;
     await this.rabbitMqMigrator.run(channel);
 
@@ -68,13 +68,11 @@ export class RabbitmqMessagingConsumer
       channel.channel.publish(
         exchange,
         routingKey,
-        Buffer.from(
-          JSON.stringify(errored.dispatchedConsumerMessage.message),
-        ),
+        Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
         {
           headers: {
             'messaging-routing-key':
-            errored.dispatchedConsumerMessage.routingKey,
+              errored.dispatchedConsumerMessage.routingKey,
           },
         },
       );
