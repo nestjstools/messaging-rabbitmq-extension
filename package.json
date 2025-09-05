@@ -51,7 +51,7 @@
     "test:e2e": "node_modules/.bin/jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "rabbitmq-client": "^5.0.4"
+    "amqplib": "^0.10.9"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.x||^11.x",

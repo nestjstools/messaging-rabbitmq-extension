@@ -1,20 +1,41 @@
-import { AmqpChannelConfig, Channel } from '@nestjstools/messaging';
+import { Channel } from '@nestjstools/messaging';
 import { RmqChannelConfig as ExtensionAmqpChannelConfig } from './rmq-channel.config';
-import { Connection } from 'rabbitmq-client';
+import * as amqp from 'amqplib';
 
-export class AmqpChannel extends Channel<
-  AmqpChannelConfig | ExtensionAmqpChannelConfig
-> {
-  public readonly connection: Connection;
-  public readonly config: AmqpChannelConfig | ExtensionAmqpChannelConfig;
+export class AmqpChannel extends Channel<ExtensionAmqpChannelConfig> {
+  public connection?: any;
+  public channel?: any;
+  public readonly config: ExtensionAmqpChannelConfig;
 
-  constructor(config: AmqpChannelConfig | ExtensionAmqpChannelConfig) {
+  constructor(config: ExtensionAmqpChannelConfig) {
     super(config);
-    this.connection = new Connection(config.connectionUri);
+    this.config = config;
+  }
+
+  async init(): Promise<void> {
+    if (this.connection && this.channel) {
+      return Promise.resolve();
+    }
+
+    this.connection = undefined;
+    this.channel = undefined;
+
+    this.connection = await amqp.connect(this.config.connectionUri);
+    this.channel = await this.connection.createChannel();
+
+    if (this.config.queue) {
+      await this.channel.assertQueue(this.config.queue, { durable: true });
+    }
   }
 
   async onChannelDestroy(): Promise<void> {
-    await this.connection.close();
-    return Promise.resolve();
+    if (this.channel) {
+      await this.channel.close();
+      this.channel = undefined;
+    }
+    if (this.connection) {
+      await this.connection.close();
+      this.connection = undefined;
+    }
   }
 }

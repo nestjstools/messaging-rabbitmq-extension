@@ -1,11 +1,9 @@
-import { Envelope } from 'rabbitmq-client';
-
 export class AmqpMessageBuilder {
   private constructor(
-    private exchangeName: string = undefined,
-    private routingKey: string = undefined,
-    private headers: { [key: string]: string } = undefined,
-    private message: object = undefined,
+    private exchangeName?: string,
+    private routingKey?: string,
+    private headers?: { [key: string]: any },
+    private message?: object,
   ) {}
 
   static create(): AmqpMessageBuilder {
@@ -22,16 +20,15 @@ export class AmqpMessageBuilder {
     return this;
   }
 
-  withHeaders(headers: { [key: string]: string }): AmqpMessageBuilder {
+  withHeaders(headers: { [key: string]: any }): AmqpMessageBuilder {
     this.headers = headers;
     return this;
   }
 
-  addHeader(key: string, value: string): AmqpMessageBuilder {
+  addHeader(key: string, value: any): AmqpMessageBuilder {
     if (!this.headers) {
       this.headers = {};
     }
-
     this.headers[key] = value;
     return this;
   }
@@ -42,16 +39,16 @@ export class AmqpMessageBuilder {
   }
 
   buildMessage(): AmqpMessage {
-    if (this.exchangeName === undefined) {
+    if (!this.exchangeName) {
       throw new Error('Exchange name must be defined');
     }
 
-    if (this.routingKey === undefined) {
-      throw new Error('RoutingKey name must be defined');
+    if (!this.routingKey) {
+      throw new Error('Routing key must be defined');
     }
 
-    if (this.message === undefined) {
-      throw new Error('Message name must be defined');
+    if (!this.message) {
+      throw new Error('Message must be defined');
     }
 
     return {
@@ -59,13 +56,17 @@ export class AmqpMessageBuilder {
       envelope: {
         exchange: this.exchangeName,
         routingKey: this.routingKey,
-        headers: this.headers,
+        headers: this.headers ?? {},
       },
     };
   }
 }
 
-interface AmqpMessage {
+export interface AmqpMessage {
   message: object;
-  envelope: Envelope;
+  envelope: {
+    exchange: string;
+    routingKey: string;
+    headers?: { [key: string]: any };
+  };
 }
