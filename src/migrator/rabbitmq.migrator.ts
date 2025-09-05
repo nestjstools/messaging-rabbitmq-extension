@@ -1,48 +1,47 @@
 import { AmqpChannel } from '../channel/amqp.channel';
 import { Injectable } from '@nestjs/common';
-import { ExchangeType } from '@nestjstools/messaging';
 
 @Injectable()
 export class RabbitmqMigrator {
-  async run(channel: AmqpChannel): Promise<any> {
-    if (false === channel.config.autoCreate) {
+  async run(channel: AmqpChannel): Promise<void> {
+    if (channel.config.autoCreate === false) {
       return;
     }
 
-    await channel.connection.exchangeDeclare({
-      durable: true,
-      exchange: channel.config.exchangeName,
-      type: channel.config.exchangeType,
-    });
+    if (!channel.channel) {
+      throw new Error('AMQP channel not initialized. Did you call init()?');
+    }
 
-    await channel.connection.queueDeclare({
+    await channel.channel.assertExchange(
+      channel.config.exchangeName,
+      channel.config.exchangeType,
+      { durable: true },
+    );
+
+    await channel.channel.assertQueue(channel.config.queue, {
       durable: true,
-      queue: channel.config.queue,
     });
 
     if (channel.config.deadLetterQueueFeature === true) {
-      await channel.connection.exchangeDeclare({
+      const dlxExchange = 'dead_letter.exchange';
+      const dlq = `${channel.config.queue}_dead_letter`;
+
+      await channel.channel.assertExchange(dlxExchange, 'direct', {
         durable: true,
-        exchange: 'dead_letter.exchange',
-        type: ExchangeType.DIRECT,
       });
-      await channel.connection.queueDeclare({
-        durable: true,
-        queue: `${channel.config.queue}_dead_letter`,
-      });
-      await channel.connection.queueBind({
-        queue: `${channel.config.queue}_dead_letter`,
-        exchange: 'dead_letter.exchange',
-        routingKey: `${channel.config.queue}_dead_letter`,
-      });
+
+      await channel.channel.assertQueue(dlq, { durable: true });
+
+      await channel.channel.bindQueue(dlq, dlxExchange, dlq);
     }
 
-    for (const bindingKey of channel.config.bindingKeys) {
-      await channel.connection.queueBind({
-        queue: channel.config.queue,
-        exchange: channel.config.exchangeName,
-        routingKey: bindingKey,
-      });
+    // Bindings
+    for (const bindingKey of channel.config.bindingKeys ?? []) {
+      await channel.channel.bindQueue(
+        channel.config.queue,
+        channel.config.exchangeName,
+        bindingKey,
+      );
     }
   }
 }

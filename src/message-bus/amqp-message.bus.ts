@@ -1,20 +1,15 @@
 import { RoutingMessage } from '@nestjstools/messaging';
 import { IMessageBus } from '@nestjstools/messaging';
 import { Injectable } from '@nestjs/common';
-import { Connection } from 'rabbitmq-client';
-import { AmqpMessageOptions } from '../message/amqp-message-options';
 import { AmqpChannel } from '../channel/amqp.channel';
-import { ExchangeType } from '@nestjstools/messaging';
+import { AmqpMessageOptions } from '../message/amqp-message-options';
 import { AmqpMessageBuilder } from './amqp-message.builder';
 import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
+import { ExchangeType } from '../channel/rmq-channel.config';
 
 @Injectable()
 export class AmqpMessageBus implements IMessageBus {
-  private readonly connection: Connection;
-
-  constructor(private readonly amqpChanel: AmqpChannel) {
-    this.connection = amqpChanel.connection;
-  }
+  constructor(private readonly amqpChannel: AmqpChannel) {}
 
   async dispatch(message: RoutingMessage): Promise<object | void> {
     if (
@@ -37,9 +32,19 @@ export class AmqpMessageBus implements IMessageBus {
     );
 
     const amqpMessage = messageBuilder.buildMessage();
-    const publisher = await this.connection.createPublisher();
-    await publisher.send(amqpMessage.envelope, amqpMessage.message);
-    await publisher.close();
+
+    if (!this.amqpChannel.channel) {
+      throw new Error('AMQP channel not initialized. Did you call init()?');
+    }
+
+    await this.amqpChannel.channel.publish(
+      amqpMessage.envelope.exchange,
+      amqpMessage.envelope.routingKey,
+      Buffer.from(JSON.stringify(amqpMessage.message)),
+      {
+        headers: amqpMessage.envelope.headers,
+      },
+    );
   }
 
   private createMessageBuilderWhenUndefined(
@@ -49,13 +54,13 @@ export class AmqpMessageBus implements IMessageBus {
 
     messageBuilder
       .withMessage(message.message)
-      .withExchangeName(this.amqpChanel.config.exchangeName);
+      .withExchangeName(this.amqpChannel.config.exchangeName);
 
-    if (this.amqpChanel.config.exchangeType === ExchangeType.DIRECT) {
+    if (this.amqpChannel.config.exchangeType === ExchangeType.DIRECT) {
       messageBuilder.withRoutingKey(this.getRoutingKey(message));
     }
 
-    if (this.amqpChanel.config.exchangeType === ExchangeType.TOPIC) {
+    if (this.amqpChannel.config.exchangeType === ExchangeType.TOPIC) {
       messageBuilder.withRoutingKey(message.messageRoutingKey);
     }
 
@@ -67,10 +72,11 @@ export class AmqpMessageBus implements IMessageBus {
   ): AmqpMessageBuilder {
     const options = message.messageOptions as AmqpMessageOptions;
     const messageBuilder = AmqpMessageBuilder.create();
+
     messageBuilder
       .withMessage(message.message)
       .withExchangeName(
-        options.exchangeName ?? this.amqpChanel.config.exchangeName,
+        options.exchangeName ?? this.amqpChannel.config.exchangeName,
       )
       .withRoutingKey(options.routingKey ?? this.getRoutingKey(message))
       .withHeaders(options.headers);
@@ -79,9 +85,9 @@ export class AmqpMessageBus implements IMessageBus {
   }
 
   private getRoutingKey(message: RoutingMessage): string {
-    return this.amqpChanel.config.bindingKeys !== undefined
-      ? this.amqpChanel.config.bindingKeys.length > 0
-        ? this.amqpChanel.config.bindingKeys[0]
+    return this.amqpChannel.config.bindingKeys !== undefined
+      ? this.amqpChannel.config.bindingKeys.length > 0
+        ? this.amqpChannel.config.bindingKeys[0]
         : message.messageRoutingKey
       : message.messageRoutingKey;
   }
