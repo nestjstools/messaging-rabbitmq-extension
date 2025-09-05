@@ -3,9 +3,9 @@ import { IMessageBus } from '@nestjstools/messaging';
 import { Injectable } from '@nestjs/common';
 import { AmqpChannel } from '../channel/amqp.channel';
 import { AmqpMessageOptions } from '../message/amqp-message-options';
-import { ExchangeType } from '@nestjstools/messaging';
 import { AmqpMessageBuilder } from './amqp-message.builder';
 import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
+import { ExchangeType } from '../channel/rmq-channel.config';
 
 @Injectable()
 export class AmqpMessageBus implements IMessageBus {
