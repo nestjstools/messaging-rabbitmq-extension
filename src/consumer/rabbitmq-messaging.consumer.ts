@@ -15,6 +15,7 @@ export class RabbitmqMessagingConsumer
   implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy
 {
   private channel?: AmqpChannel = undefined;
+  private amqpChannel: any;
 
   constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {}
 
@@ -26,7 +27,8 @@ export class RabbitmqMessagingConsumer
     this.channel = channel;
     await this.rabbitMqMigrator.run(channel);
 
-    const amqpChannel = channel.channel;
+    const amqpChannel = await this.channel.connection.createChannel();
+    this.amqpChannel = amqpChannel;
 
     if (!amqpChannel) {
       throw new Error('AMQP channel not initialized');
@@ -63,15 +65,11 @@ export class RabbitmqMessagingConsumer
     errored: ConsumerDispatchedMessageError,
     channel: AmqpChannel,
   ): Promise<void> {
-    if (channel.config.deadLetterQueueFeature && channel.channel) {
+    if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
       const exchange = 'dead_letter.exchange';
       const routingKey = `${channel.config.queue}_dead_letter`;
 
-      await channel.channel.assertExchange(exchange, 'direct', {
-        durable: true,
-      });
-
-      channel.channel.publish(
+      this.amqpChannel.publish(
         exchange,
         routingKey,
         Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),

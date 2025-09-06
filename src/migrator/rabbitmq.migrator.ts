@@ -8,17 +8,15 @@ export class RabbitmqMigrator {
       return;
     }
 
-    if (!channel.channel) {
-      throw new Error('AMQP channel not initialized. Did you call init()?');
-    }
+    const amqpChannel = await channel.connection.createChannel();
 
-    await channel.channel.assertExchange(
+    await amqpChannel.assertExchange(
       channel.config.exchangeName,
       channel.config.exchangeType,
       { durable: true },
     );
 
-    await channel.channel.assertQueue(channel.config.queue, {
+    await amqpChannel.assertQueue(channel.config.queue, {
       durable: true,
     });
 
@@ -26,18 +24,18 @@ export class RabbitmqMigrator {
       const dlxExchange = 'dead_letter.exchange';
       const dlq = `${channel.config.queue}_dead_letter`;
 
-      await channel.channel.assertExchange(dlxExchange, 'direct', {
+      await amqpChannel.assertExchange(dlxExchange, 'direct', {
         durable: true,
       });
 
-      await channel.channel.assertQueue(dlq, { durable: true });
+      await amqpChannel.assertQueue(dlq, { durable: true });
 
-      await channel.channel.bindQueue(dlq, dlxExchange, dlq);
+      await amqpChannel.bindQueue(dlq, dlxExchange, dlq);
     }
 
     // Bindings
     for (const bindingKey of channel.config.bindingKeys ?? []) {
-      await channel.channel.bindQueue(
+      await amqpChannel.bindQueue(
         channel.config.queue,
         channel.config.exchangeName,
         bindingKey,

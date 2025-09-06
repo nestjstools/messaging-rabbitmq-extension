@@ -9,10 +9,14 @@ import { ExchangeType } from '../channel/rmq-channel.config';
 
 @Injectable()
 export class AmqpMessageBus implements IMessageBus {
+  public publisherChannel?: any;
+
   constructor(private readonly amqpChannel: AmqpChannel) {}
 
   async dispatch(message: RoutingMessage): Promise<object | void> {
     await this.amqpChannel.init();
+    await this.initPublisherChannel();
+
     if (
       message.messageOptions !== undefined &&
       !(message.messageOptions instanceof AmqpMessageOptions)
@@ -34,11 +38,7 @@ export class AmqpMessageBus implements IMessageBus {
 
     const amqpMessage = messageBuilder.buildMessage();
 
-    if (!this.amqpChannel.channel) {
-      throw new Error('AMQP channel not initialized. Did you call init()?');
-    }
-
-    await this.amqpChannel.channel.publish(
+    await this.publisherChannel.publish(
       amqpMessage.envelope.exchange,
       amqpMessage.envelope.routingKey,
       Buffer.from(JSON.stringify(amqpMessage.message)),
@@ -46,6 +46,12 @@ export class AmqpMessageBus implements IMessageBus {
         headers: amqpMessage.envelope.headers,
       },
     );
+  }
+
+  async initPublisherChannel() {
+    if (!this.publisherChannel && this.amqpChannel.connection) {
+      this.publisherChannel = await this.amqpChannel.connection.createChannel();
+    }
   }
 
   private createMessageBuilderWhenUndefined(
