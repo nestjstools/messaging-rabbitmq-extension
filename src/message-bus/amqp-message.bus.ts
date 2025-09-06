@@ -12,6 +12,7 @@ export class AmqpMessageBus implements IMessageBus {
   constructor(private readonly amqpChannel: AmqpChannel) {}
 
   async dispatch(message: RoutingMessage): Promise<object | void> {
+    await this.amqpChannel.init();
     if (
       message.messageOptions !== undefined &&
       !(message.messageOptions instanceof AmqpMessageOptions)
