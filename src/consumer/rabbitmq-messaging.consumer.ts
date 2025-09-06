@@ -27,10 +27,12 @@ export class RabbitmqMessagingConsumer
     await this.rabbitMqMigrator.run(channel);
 
     const amqpChannel = channel.channel;
+
     if (!amqpChannel) {
       throw new Error('AMQP channel not initialized');
     }
 
+    await amqpChannel.prefetch(1);
     await amqpChannel.consume(
       channel.config.queue,
       async (msg) => {
