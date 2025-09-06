@@ -47,9 +47,13 @@ export class RabbitmqMessagingConsumer
           msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ??
           msg.fields.routingKey;
 
-        await dispatcher.dispatch(new ConsumerMessage(message, routingKey));
+        if (dispatcher.isReady()) {
+          await dispatcher.dispatch(new ConsumerMessage(message, routingKey));
+          amqpChannel.ack(msg);
+          return;
+        }
 
-        amqpChannel.ack(msg);
+        amqpChannel.nack(msg, false, true);
       },
       { noAck: false },
     );
