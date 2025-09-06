@@ -80,10 +80,10 @@ export class RabbitmqMessagingConsumer
   }
 
   async onModuleDestroy(): Promise<void> {
-    if (this.channel) {
+    if (this.channel?.connection) {
       await this.channel.connection.close();
-      this.channel = undefined;
     }
+    this.channel = undefined;
   }
 }
 
