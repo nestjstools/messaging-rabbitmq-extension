@@ -20,7 +20,9 @@ export class AmqpChannel extends Channel<ExtensionAmqpChannelConfig> {
 
     this.connection = await amqp.connect(this.config.connectionUri);
     this.connection.on('close', (err: any) => {
-      console.error('AMQP Connection error:', err);
+      if (err) {
+        console.error('AMQP Connection error:', err);
+      }
       process.exit(0);
     });
   }
