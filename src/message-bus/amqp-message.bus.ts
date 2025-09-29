@@ -1,22 +1,22 @@
 import { RoutingMessage } from '@nestjstools/messaging';
 import { IMessageBus } from '@nestjstools/messaging';
 import { Injectable } from '@nestjs/common';
-import { AmqpChannel } from '../channel/amqp.channel';
+import { Connection } from 'rabbitmq-client';
 import { AmqpMessageOptions } from '../message/amqp-message-options';
+import { AmqpChannel } from '../channel/amqp.channel';
 import { AmqpMessageBuilder } from './amqp-message.builder';
 import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
 import { ExchangeType } from '../channel/rmq-channel.config';
 
 @Injectable()
 export class AmqpMessageBus implements IMessageBus {
-  public publisherChannel?: any;
+  private readonly connection: Connection;
 
-  constructor(private readonly amqpChannel: AmqpChannel) {}
+  constructor(private readonly amqpChanel: AmqpChannel) {
+    this.connection = amqpChanel.connection;
+  }
 
   async dispatch(message: RoutingMessage): Promise<object | void> {
-    await this.amqpChannel.init();
-    await this.initPublisherChannel();
-
     if (
       message.messageOptions !== undefined &&
       !(message.messageOptions instanceof AmqpMessageOptions)
@@ -37,21 +37,9 @@ export class AmqpMessageBus implements IMessageBus {
     );
 
     const amqpMessage = messageBuilder.buildMessage();
-
-    await this.publisherChannel.publish(
-      amqpMessage.envelope.exchange,
-      amqpMessage.envelope.routingKey,
-      Buffer.from(JSON.stringify(amqpMessage.message)),
-      {
-        headers: amqpMessage.envelope.headers,
-      },
-    );
-  }
-
-  async initPublisherChannel() {
-    if (!this.publisherChannel && this.amqpChannel.connection) {
-      this.publisherChannel = await this.amqpChannel.connection.createChannel();
-    }
+    const publisher = await this.connection.createPublisher();
+    await publisher.send(amqpMessage.envelope, amqpMessage.message);
+    await publisher.close();
   }
 
   private createMessageBuilderWhenUndefined(
@@ -61,13 +49,13 @@ export class AmqpMessageBus implements IMessageBus {
 
     messageBuilder
       .withMessage(message.message)
-      .withExchangeName(this.amqpChannel.config.exchangeName);
+      .withExchangeName(this.amqpChanel.config.exchangeName);
 
-    if (this.amqpChannel.config.exchangeType === ExchangeType.DIRECT) {
+    if (this.amqpChanel.config.exchangeType === ExchangeType.DIRECT) {
       messageBuilder.withRoutingKey(this.getRoutingKey(message));
     }
 
-    if (this.amqpChannel.config.exchangeType === ExchangeType.TOPIC) {
+    if (this.amqpChanel.config.exchangeType === ExchangeType.TOPIC) {
       messageBuilder.withRoutingKey(message.messageRoutingKey);
     }
 
@@ -79,11 +67,10 @@ export class AmqpMessageBus implements IMessageBus {
   ): AmqpMessageBuilder {
     const options = message.messageOptions as AmqpMessageOptions;
     const messageBuilder = AmqpMessageBuilder.create();
-
     messageBuilder
       .withMessage(message.message)
       .withExchangeName(
-        options.exchangeName ?? this.amqpChannel.config.exchangeName,
+        options.exchangeName ?? this.amqpChanel.config.exchangeName,
       )
       .withRoutingKey(options.routingKey ?? this.getRoutingKey(message))
       .withHeaders(options.headers);
@@ -92,9 +79,9 @@ export class AmqpMessageBus implements IMessageBus {
   }
 
   private getRoutingKey(message: RoutingMessage): string {
-    return this.amqpChannel.config.bindingKeys !== undefined
-      ? this.amqpChannel.config.bindingKeys.length > 0
-        ? this.amqpChannel.config.bindingKeys[0]
+    return this.amqpChanel.config.bindingKeys !== undefined
+      ? this.amqpChanel.config.bindingKeys.length > 0
+        ? this.amqpChanel.config.bindingKeys[0]
         : message.messageRoutingKey
       : message.messageRoutingKey;
   }

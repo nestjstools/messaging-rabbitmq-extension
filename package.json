@@ -1,6 +1,6 @@
 {
   "name": "@nestjstools/messaging-rabbitmq-extension",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "Extension to handle messages and dispatch them over AMQP protocol",
   "author": "Sebastian Iwanczyszyn",
   "private": false,
@@ -51,7 +51,7 @@
     "test:e2e": "node_modules/.bin/jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "amqplib": "^0.10.9"
+    "rabbitmq-client": "^5.0.5"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.x||^11.x",

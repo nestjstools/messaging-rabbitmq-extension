@@ -3,7 +3,7 @@ import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
 import { IMessagingConsumer } from '@nestjstools/messaging';
 import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
 import { ConsumerMessage } from '@nestjstools/messaging';
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MessageConsumer } from '@nestjstools/messaging';
 import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { RabbitmqMigrator } from '../migrator/rabbitmq.migrator';
@@ -12,10 +12,9 @@ import { Buffer } from 'buffer';
 @Injectable()
 @MessageConsumer(AmqpChannel)
 export class RabbitmqMessagingConsumer
-  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy
+  implements IMessagingConsumer<AmqpChannel>
 {
   private channel?: AmqpChannel = undefined;
-  private amqpChannel: any;
 
   constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {}
 
@@ -23,71 +22,53 @@ export class RabbitmqMessagingConsumer
     dispatcher: ConsumerMessageDispatcher,
     channel: AmqpChannel,
   ): Promise<void> {
-    await channel.init();
-    this.channel = channel;
     await this.rabbitMqMigrator.run(channel);
+    this.channel = channel;
 
-    const amqpChannel = await this.channel.connection.createChannel();
-    this.amqpChannel = amqpChannel;
+    channel.connection.createConsumer(
+      {
+        queue: channel.config.queue,
+        queueOptions: { durable: true },
+        requeue: false,
+      },
+      async (msg): Promise<void> => {
+        const rabbitMqMessage = msg as RabbitMQMessage;
 
-    if (!amqpChannel) {
-      throw new Error('AMQP channel not initialized');
-    }
-
-    await amqpChannel.prefetch(1);
-    await amqpChannel.consume(
-      channel.config.queue,
-      async (msg) => {
-        if (!msg) return;
-
-        let message: any = msg.content;
+        let message = rabbitMqMessage.body;
         if (Buffer.isBuffer(message)) {
-          message = JSON.parse(message.toString());
+          const messageContent = message.toString();
+          message = JSON.parse(messageContent);
         }
 
         const routingKey =
-          msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ??
-          msg.fields.routingKey;
+          rabbitMqMessage.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ??
+          rabbitMqMessage.routingKey;
 
-        if (dispatcher.isReady()) {
-          await dispatcher.dispatch(new ConsumerMessage(message, routingKey));
-          amqpChannel.ack(msg);
-          return;
-        }
-
-        amqpChannel.nack(msg, false, true);
+        dispatcher.dispatch(new ConsumerMessage(message, routingKey));
       },
-      { noAck: false },
     );
+
+    return Promise.resolve();
   }
 
   async onError(
     errored: ConsumerDispatchedMessageError,
     channel: AmqpChannel,
   ): Promise<void> {
-    if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
-      const exchange = 'dead_letter.exchange';
-      const routingKey = `${channel.config.queue}_dead_letter`;
-
-      this.amqpChannel.publish(
-        exchange,
-        routingKey,
-        Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
-        {
-          headers: {
-            'messaging-routing-key':
-              errored.dispatchedConsumerMessage.routingKey,
-          },
+    if (channel.config.deadLetterQueueFeature) {
+      const publisher = channel.connection.createPublisher();
+      const envelope = {
+        headers: {
+          'messaging-routing-key': errored.dispatchedConsumerMessage.routingKey,
         },
-      );
+        exchange: 'dead_letter.exchange',
+        routingKey: `${channel.config.queue}_dead_letter`,
+      };
+      await publisher.send(envelope, errored.dispatchedConsumerMessage.message);
+      await publisher.close();
     }
-  }
 
-  async onModuleDestroy(): Promise<void> {
-    if (this.channel?.connection) {
-      await this.channel.connection.close();
-    }
-    this.channel = undefined;
+    return Promise.resolve();
   }
 }
 

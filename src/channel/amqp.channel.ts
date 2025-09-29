@@ -1,36 +1,20 @@
 import { Channel } from '@nestjstools/messaging';
-import { RmqChannelConfig as ExtensionAmqpChannelConfig } from './rmq-channel.config';
-import * as amqp from 'amqplib';
+import { RmqChannelConfig } from './rmq-channel.config';
+import { Connection } from 'rabbitmq-client';
 
-export class AmqpChannel extends Channel<ExtensionAmqpChannelConfig> {
-  public connection?: any;
-  public readonly config: ExtensionAmqpChannelConfig;
+export class AmqpChannel extends Channel<
+  RmqChannelConfig
+> {
+  public readonly connection: Connection;
+  public readonly config: RmqChannelConfig;
 
-  constructor(config: ExtensionAmqpChannelConfig) {
+  constructor(config: RmqChannelConfig) {
     super(config);
-    this.config = config;
-  }
-
-  async init(): Promise<void> {
-    if (this.connection) {
-      return Promise.resolve();
-    }
-
-    this.connection = undefined;
-
-    this.connection = await amqp.connect(this.config.connectionUri);
-    this.connection.on('close', (err: any) => {
-      if (err) {
-        console.error('AMQP Connection error:', err);
-      }
-      process.exit(0);
-    });
+    this.connection = new Connection(config.connectionUri);
   }
 
   async onChannelDestroy(): Promise<void> {
-    if (this.connection) {
-      await this.connection.close();
-      this.connection = undefined;
-    }
+    await this.connection.close();
+    return Promise.resolve();
   }
 }
