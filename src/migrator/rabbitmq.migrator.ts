@@ -1,48 +1,55 @@
-import { AmqpChannel } from '../channel/amqp.channel';
 import { Injectable } from '@nestjs/common';
-import { ExchangeType } from '../channel/rmq-channel.config';
+import { ChannelWrapper } from 'amqp-connection-manager';
+import { Channel } from 'amqplib';
+import { AmqpChannel } from '../channel/amqp.channel';
 
 @Injectable()
 export class RabbitmqMigrator {
-  async run(channel: AmqpChannel): Promise<any> {
-    if (false === channel.config.autoCreate) {
-      return;
+  private channelWrapper?: ChannelWrapper;
+
+  async run(channel: AmqpChannel): Promise<void> {
+    if (channel.config.autoCreate === false) {
+      return Promise.resolve();
     }
 
-    await channel.connection.exchangeDeclare({
-      durable: true,
-      exchange: channel.config.exchangeName,
-      type: channel.config.exchangeType,
+    if (!channel.connection) {
+      throw new Error('Brak aktywnego połączenia AMQP');
+    }
+
+    this.channelWrapper = channel.createChannelWrapper();
+
+    await this.channelWrapper.addSetup(async (ch: Channel) => {
+      // Exchange
+      await ch.assertExchange(
+        channel.config.exchangeName,
+        channel.config.exchangeType,
+        { durable: true },
+      );
+
+      // Queue
+      await ch.assertQueue(channel.config.queue, {
+        durable: true,
+      });
+
+      // Dead letter infra
+      if (channel.config.deadLetterQueueFeature) {
+        const dlxExchange = 'dead_letter.exchange';
+        const dlq = `${channel.config.queue}_dead_letter`;
+        await ch.assertExchange(dlxExchange, 'direct', { durable: true });
+        await ch.assertQueue(dlq, { durable: true });
+        await ch.bindQueue(dlq, dlxExchange, dlq);
+      }
+
+      // Bindings
+      for (const key of channel.config.bindingKeys ?? []) {
+        await ch.bindQueue(
+          channel.config.queue,
+          channel.config.exchangeName,
+          key,
+        );
+      }
     });
 
-    await channel.connection.queueDeclare({
-      durable: true,
-      queue: channel.config.queue,
-    });
-
-    if (channel.config.deadLetterQueueFeature === true) {
-      await channel.connection.exchangeDeclare({
-        durable: true,
-        exchange: 'dead_letter.exchange',
-        type: ExchangeType.DIRECT,
-      });
-      await channel.connection.queueDeclare({
-        durable: true,
-        queue: `${channel.config.queue}_dead_letter`,
-      });
-      await channel.connection.queueBind({
-        queue: `${channel.config.queue}_dead_letter`,
-        exchange: 'dead_letter.exchange',
-        routingKey: `${channel.config.queue}_dead_letter`,
-      });
-    }
-
-    for (const bindingKey of channel.config.bindingKeys) {
-      await channel.connection.queueBind({
-        queue: channel.config.queue,
-        exchange: channel.config.exchangeName,
-        routingKey: bindingKey,
-      });
-    }
+    return await this.channelWrapper.waitForConnect();
   }
 }
