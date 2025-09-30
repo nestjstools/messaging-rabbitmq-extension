@@ -52,11 +52,14 @@ export class RabbitmqMessagingConsumer
           }
 
           const routingKey: string =
-            (msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] as string | undefined) ??
-            msg.fields.routingKey;
+            (msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] as
+              | string
+              | undefined) ?? msg.fields.routingKey;
 
           if (dispatcher.isReady()) {
-            await dispatcher.dispatch(new ConsumerMessage(payload as object, routingKey));
+            await dispatcher.dispatch(
+              new ConsumerMessage(payload as object, routingKey),
+            );
             rawChannel.ack(msg);
           } else {
             rawChannel.nack(msg, false, true);
@@ -81,7 +84,8 @@ export class RabbitmqMessagingConsumer
         Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
         {
           headers: {
-            [RABBITMQ_HEADER_ROUTING_KEY]: errored.dispatchedConsumerMessage.routingKey,
+            [RABBITMQ_HEADER_ROUTING_KEY]:
+              errored.dispatchedConsumerMessage.routingKey,
           },
         } as Options.Publish,
       );

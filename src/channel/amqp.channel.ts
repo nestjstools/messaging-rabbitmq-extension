@@ -1,6 +1,10 @@
 import { Channel } from '@nestjstools/messaging';
 import { RmqChannelConfig as ExtensionAmqpChannelConfig } from './rmq-channel.config';
-import { AmqpConnectionManager, ChannelWrapper, connect } from 'amqp-connection-manager';
+import {
+  AmqpConnectionManager,
+  ChannelWrapper,
+  connect,
+} from 'amqp-connection-manager';
 
 export class AmqpChannel extends Channel<ExtensionAmqpChannelConfig> {
   public connection: AmqpConnectionManager;
