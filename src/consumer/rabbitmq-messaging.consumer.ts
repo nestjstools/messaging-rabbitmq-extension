@@ -3,18 +3,20 @@ import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
 import { IMessagingConsumer } from '@nestjstools/messaging';
 import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
 import { ConsumerMessage } from '@nestjstools/messaging';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { MessageConsumer } from '@nestjstools/messaging';
 import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { RabbitmqMigrator } from '../migrator/rabbitmq.migrator';
-import { Buffer } from 'buffer';
+import { ChannelWrapper } from 'amqp-connection-manager';
+import { Channel, ConsumeMessage, Options } from 'amqplib';
 
 @Injectable()
 @MessageConsumer(AmqpChannel)
 export class RabbitmqMessagingConsumer
-  implements IMessagingConsumer<AmqpChannel>
+  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy
 {
   private channel?: AmqpChannel = undefined;
+  private amqpChannel: ChannelWrapper;
 
   constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {}
 
@@ -22,59 +24,78 @@ export class RabbitmqMessagingConsumer
     dispatcher: ConsumerMessageDispatcher,
     channel: AmqpChannel,
   ): Promise<void> {
-    await this.rabbitMqMigrator.run(channel);
     this.channel = channel;
+    await this.rabbitMqMigrator.run(channel);
 
-    channel.connection.createConsumer(
-      {
-        queue: channel.config.queue,
-        queueOptions: { durable: true },
-        requeue: false,
-      },
-      async (msg): Promise<void> => {
-        const rabbitMqMessage = msg as RabbitMQMessage;
+    if (!channel.connection) {
+      throw new Error('Brak aktywnego połączenia AMQP');
+    }
 
-        let message = rabbitMqMessage.body;
-        if (Buffer.isBuffer(message)) {
-          const messageContent = message.toString();
-          message = JSON.parse(messageContent);
-        }
+    const channelWrapper = channel.createChannelWrapper();
+    await channelWrapper.waitForConnect();
+    this.amqpChannel = channelWrapper;
 
-        const routingKey =
-          rabbitMqMessage.headers?.[RABBITMQ_HEADER_ROUTING_KEY] ??
-          rabbitMqMessage.routingKey;
+    await channelWrapper.addSetup(async (rawChannel: Channel) => {
+      return rawChannel.consume(
+        channel.config.queue,
+        async (msg: ConsumeMessage | null) => {
+          if (!msg) return;
 
-        dispatcher.dispatch(new ConsumerMessage(message, routingKey));
-      },
-    );
+          let payload: unknown = msg.content;
+          if (Buffer.isBuffer(payload)) {
+            try {
+              payload = JSON.parse(payload.toString());
+            } catch {
+              rawChannel.nack(msg, false, false);
+              return;
+            }
+          }
 
-    return Promise.resolve();
+          const routingKey: string =
+            (msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] as
+              | string
+              | undefined) ?? msg.fields.routingKey;
+
+          if (dispatcher.isReady()) {
+            await dispatcher.dispatch(
+              new ConsumerMessage(payload as object, routingKey),
+            );
+            rawChannel.ack(msg);
+          } else {
+            rawChannel.nack(msg, false, true);
+          }
+        },
+        { noAck: false },
+      );
+    });
   }
 
   async onError(
     errored: ConsumerDispatchedMessageError,
     channel: AmqpChannel,
   ): Promise<void> {
-    if (channel.config.deadLetterQueueFeature) {
-      const publisher = channel.connection.createPublisher();
-      const envelope = {
-        headers: {
-          'messaging-routing-key': errored.dispatchedConsumerMessage.routingKey,
-        },
-        exchange: 'dead_letter.exchange',
-        routingKey: `${channel.config.queue}_dead_letter`,
-      };
-      await publisher.send(envelope, errored.dispatchedConsumerMessage.message);
-      await publisher.close();
+    if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
+      const exchange = 'dead_letter.exchange';
+      const routingKey = `${channel.config.queue}_dead_letter`;
+
+      await this.amqpChannel.publish(
+        exchange,
+        routingKey,
+        Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
+        {
+          headers: {
+            [RABBITMQ_HEADER_ROUTING_KEY]:
+              errored.dispatchedConsumerMessage.routingKey,
+          },
+        } as Options.Publish,
+      );
     }
-
-    return Promise.resolve();
   }
-}
 
-interface RabbitMQMessage {
-  contentType: string;
-  body: object;
-  routingKey: string;
-  headers: { [key: string]: string };
+  async onModuleDestroy(): Promise<void> {
+    if (this.channel?.connection) {
+      await this.channel.connection.close();
+    }
+    this.channel = undefined;
+  }
 }
