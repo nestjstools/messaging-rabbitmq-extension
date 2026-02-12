@@ -28,7 +28,7 @@ export class RabbitmqMessagingConsumer
     await this.rabbitMqMigrator.run(channel);
 
     if (!channel.connection) {
-      throw new Error('Brak aktywnego połączenia AMQP');
+      throw new Error('There is no active connection to RabbitMQ. Cannot consume messages.');
     }
 
     const channelWrapper = channel.createChannelWrapper();
