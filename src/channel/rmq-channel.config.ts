@@ -8,6 +8,10 @@ export class RmqChannelConfig extends ChannelConfig {
   public readonly bindingKeys?: string[];
   public readonly autoCreate?: boolean;
   public readonly deadLetterQueueFeature?: boolean;
+  /**
+   * @description Number of times to retry a message before sending it to the dead letter queue. Only applicable if `deadLetterQueueFeature` is enabled.
+   */
+  public readonly retryMessage?: number;
 
   constructor({
     name,
@@ -22,6 +26,7 @@ export class RmqChannelConfig extends ChannelConfig {
     avoidErrorsForNotExistedHandlers,
     middlewares,
     normalizer,
+    retryMessage,
   }: RmqChannelConfig) {
     super(
       name,
@@ -37,6 +42,7 @@ export class RmqChannelConfig extends ChannelConfig {
     this.bindingKeys = bindingKeys;
     this.autoCreate = autoCreate ?? true;
     this.deadLetterQueueFeature = deadLetterQueueFeature ?? false;
+    this.retryMessage = retryMessage;
   }
 }
 

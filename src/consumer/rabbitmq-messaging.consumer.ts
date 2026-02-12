@@ -1,5 +1,5 @@
 import { AmqpChannel } from '../channel/amqp.channel';
-import { RABBITMQ_HEADER_ROUTING_KEY } from '../const';
+import { RABBITMQ_HEADER_RETRY_COUNT, RABBITMQ_HEADER_ROUTING_KEY } from '../const';
 import { IMessagingConsumer } from '@nestjstools/messaging';
 import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
 import { ConsumerMessage } from '@nestjstools/messaging';
@@ -13,12 +13,12 @@ import { Channel, ConsumeMessage, Options } from 'amqplib';
 @Injectable()
 @MessageConsumer(AmqpChannel)
 export class RabbitmqMessagingConsumer
-  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy
-{
+  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy {
   private channel?: AmqpChannel = undefined;
   private amqpChannel: ChannelWrapper;
 
-  constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {}
+  constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {
+  }
 
   async consume(
     dispatcher: ConsumerMessageDispatcher,
@@ -51,6 +51,10 @@ export class RabbitmqMessagingConsumer
             }
           }
 
+          const retryCount = (msg.properties.headers?.[RABBITMQ_HEADER_RETRY_COUNT] as
+            | number
+            | undefined) ?? 0;
+
           const routingKey: string =
             (msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] as
               | string
@@ -58,7 +62,9 @@ export class RabbitmqMessagingConsumer
 
           if (dispatcher.isReady()) {
             await dispatcher.dispatch(
-              new ConsumerMessage(payload as object, routingKey),
+              new ConsumerMessage(payload as object, routingKey, {
+                [RABBITMQ_HEADER_RETRY_COUNT]: retryCount,
+              }),
             );
             rawChannel.ack(msg);
           } else {
@@ -74,6 +80,28 @@ export class RabbitmqMessagingConsumer
     errored: ConsumerDispatchedMessageError,
     channel: AmqpChannel,
   ): Promise<void> {
+    if (this.channel.config.retryMessage) {
+      const limit = this.channel.config.retryMessage;
+      const retryCount = errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT] ?? 0;
+
+      if (retryCount < limit) {
+        const newRetryCount = retryCount + 1;
+
+        await this.amqpChannel.publish(
+          channel.config.exchangeName,
+          errored.dispatchedConsumerMessage.routingKey,
+          Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
+          {
+            headers: {
+              [RABBITMQ_HEADER_RETRY_COUNT]: newRetryCount,
+            },
+          } as Options.Publish,
+        );
+
+        return Promise.resolve();
+      }
+    }
+
     if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
       const exchange = 'dead_letter.exchange';
       const routingKey = `${channel.config.queue}_dead_letter`;
@@ -85,7 +113,7 @@ export class RabbitmqMessagingConsumer
         {
           headers: {
             [RABBITMQ_HEADER_ROUTING_KEY]:
-              errored.dispatchedConsumerMessage.routingKey,
+            errored.dispatchedConsumerMessage.routingKey,
           },
         } as Options.Publish,
       );
