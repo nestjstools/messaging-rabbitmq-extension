@@ -1,5 +1,8 @@
 import { AmqpChannel } from '../channel/amqp.channel';
-import { RABBITMQ_HEADER_RETRY_COUNT, RABBITMQ_HEADER_ROUTING_KEY } from '../const';
+import {
+  RABBITMQ_HEADER_RETRY_COUNT,
+  RABBITMQ_HEADER_ROUTING_KEY,
+} from '../const';
 import { IMessagingConsumer } from '@nestjstools/messaging';
 import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
 import { ConsumerMessage } from '@nestjstools/messaging';
@@ -15,7 +18,8 @@ import { MessageDeadLetterVisitor } from './message-dead-letter.visitor';
 @Injectable()
 @MessageConsumer(AmqpChannel)
 export class RabbitmqMessagingConsumer
-  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy {
+  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy
+{
   private channel?: AmqpChannel = undefined;
   private amqpChannel: ChannelWrapper;
 
@@ -23,8 +27,7 @@ export class RabbitmqMessagingConsumer
     private readonly rabbitMqMigrator: RabbitmqMigrator,
     private readonly messageRetrier: MessageRetrierVisitor,
     private readonly messageDeadLetter: MessageDeadLetterVisitor,
-  ) {
-  }
+  ) {}
 
   async consume(
     dispatcher: ConsumerMessageDispatcher,
@@ -34,7 +37,9 @@ export class RabbitmqMessagingConsumer
     await this.rabbitMqMigrator.run(channel);
 
     if (!channel.connection) {
-      throw new Error('There is no active connection to RabbitMQ. Cannot consume messages.');
+      throw new Error(
+        'There is no active connection to RabbitMQ. Cannot consume messages.',
+      );
     }
 
     const channelWrapper = channel.createChannelWrapper();
@@ -57,9 +62,10 @@ export class RabbitmqMessagingConsumer
             }
           }
 
-          const retryCount = (msg.properties.headers?.[RABBITMQ_HEADER_RETRY_COUNT] as
-            | number
-            | undefined) ?? 0;
+          const retryCount =
+            (msg.properties.headers?.[RABBITMQ_HEADER_RETRY_COUNT] as
+              | number
+              | undefined) ?? 0;
 
           const routingKey: string =
             (msg.properties.headers?.[RABBITMQ_HEADER_ROUTING_KEY] as
@@ -92,15 +98,25 @@ export class RabbitmqMessagingConsumer
 
     if (this.channel.config.retryMessage) {
       const limit = channel.config.retryMessage;
-      const currentRetryCount = errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT];
+      const currentRetryCount =
+        errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT];
 
       if (currentRetryCount < limit) {
-        return this.messageRetrier.retryMessage(errored, channel, this.amqpChannel, currentRetryCount);
+        return this.messageRetrier.retryMessage(
+          errored,
+          channel,
+          this.amqpChannel,
+          currentRetryCount,
+        );
       }
     }
 
     if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
-      return this.messageDeadLetter.sendToDeadLetter(errored, channel, this.amqpChannel);
+      return this.messageDeadLetter.sendToDeadLetter(
+        errored,
+        channel,
+        this.amqpChannel,
+      );
     }
   }
 

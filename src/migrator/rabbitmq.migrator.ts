@@ -45,7 +45,9 @@ export class RabbitmqMigrator {
         const retryExchange = `${channel.config.exchangeName}_retry.exchange`;
         const retryQueue = `${channel.config.queue}_retry`;
 
-        await ch.assertExchange(retryExchange, channel.config.exchangeType, { durable: true });
+        await ch.assertExchange(retryExchange, channel.config.exchangeType, {
+          durable: true,
+        });
 
         if (channel.config.forceRecreateRetryQueue) {
           if (await ch.checkQueue(channel.config.queue)) {
@@ -62,11 +64,7 @@ export class RabbitmqMigrator {
         });
 
         for (const key of channel.config.bindingKeys ?? []) {
-          await ch.bindQueue(
-            retryQueue,
-            retryExchange,
-            key,
-          );
+          await ch.bindQueue(retryQueue, retryExchange, key);
         }
       }
 

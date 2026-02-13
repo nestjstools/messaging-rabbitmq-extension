@@ -17,5 +17,4 @@ import { MessageDeadLetterVisitor } from './consumer/message-dead-letter.visitor
     MessageDeadLetterVisitor,
   ],
 })
-export class MessagingRabbitmqExtensionModule {
-}
+export class MessagingRabbitmqExtensionModule {}

@@ -22,7 +22,7 @@ export class MessageDeadLetterVisitor {
       {
         headers: {
           [RABBITMQ_HEADER_ROUTING_KEY]:
-          errored.dispatchedConsumerMessage.routingKey,
+            errored.dispatchedConsumerMessage.routingKey,
         },
       } as Options.Publish,
     );
