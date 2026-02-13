@@ -19,13 +19,20 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 23
+          node-version: 24
 
       - name: Install dependencies
         run: yarn
 
-      - name: Build project
-        run: yarn build
+      - name: Run Prettier
+        env:
+          NODE_ENV: test
+        run: npm run prettier
+
+      - name: Run Tests
+        env:
+          NODE_ENV: test
+        run: npm run test
 
       - name: Run CI
         run: yarn ci

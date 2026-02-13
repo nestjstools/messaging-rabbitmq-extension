@@ -40,6 +40,34 @@ export class RabbitmqMigrator {
         await ch.bindQueue(dlq, dlxExchange, dlq);
       }
 
+      // RETRY INFRA
+      if (channel.config.retryMessage) {
+        const retryExchange = `${channel.config.exchangeName}_retry.exchange`;
+        const retryQueue = `${channel.config.queue}_retry`;
+
+        await ch.assertExchange(retryExchange, channel.config.exchangeType, {
+          durable: true,
+        });
+
+        if (channel.config.forceRecreateRetryQueue) {
+          if (await ch.checkQueue(channel.config.queue)) {
+            await ch.deleteQueue(retryQueue);
+          }
+        }
+
+        await ch.assertQueue(retryQueue, {
+          durable: true,
+          arguments: {
+            'x-message-ttl': channel.config.retryMessageTtl ?? 1000,
+            'x-dead-letter-exchange': channel.config.exchangeName,
+          },
+        });
+
+        for (const key of channel.config.bindingKeys ?? []) {
+          await ch.bindQueue(retryQueue, retryExchange, key);
+        }
+      }
+
       // Bindings
       for (const key of channel.config.bindingKeys ?? []) {
         await ch.bindQueue(
