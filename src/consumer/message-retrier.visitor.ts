@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { ChannelWrapper } from 'amqp-connection-manager';
 import { Options } from 'amqplib';
+import { ExchangeType } from '../channel/rmq-channel.config';
 
 @Injectable()
 export class MessageRetrierVisitor {
@@ -13,20 +14,22 @@ export class MessageRetrierVisitor {
     amqpChannel: ChannelWrapper,
     currentRetryCount: number,
   ): Promise<void> {
-      const newRetryCount = currentRetryCount + 1;
-      await amqpChannel.publish(
-        `${channel.config.exchangeName}_retry.exchange`,
-        errored.dispatchedConsumerMessage.routingKey,
-        Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
-        {
-          headers: {
-            [RABBITMQ_HEADER_RETRY_COUNT]: newRetryCount,
-            [RABBITMQ_HEADER_ROUTING_KEY]:
-            errored.dispatchedConsumerMessage.routingKey,
-          },
-        } as Options.Publish,
-      );
+    const message = errored.dispatchedConsumerMessage;
+    const routingKey = ExchangeType.DIRECT === channel.config.exchangeType ? channel.config.bindingKeys[0] ?? message.routingKey : message.routingKey;
+    const newRetryCount = currentRetryCount + 1;
+    await amqpChannel.publish(
+      `${channel.config.exchangeName}_retry.exchange`,
+      routingKey,
+      Buffer.from(JSON.stringify(message.message)),
+      {
+        headers: {
+          [RABBITMQ_HEADER_RETRY_COUNT]: newRetryCount,
+          [RABBITMQ_HEADER_ROUTING_KEY]:
+          message.routingKey,
+        },
+      } as Options.Publish,
+    );
 
-      return Promise.resolve();
+    return Promise.resolve();
   }
 }
