@@ -4,7 +4,9 @@
 
 # @nestjstools/messaging-rabbitmq-extension
 
-A NestJS library for managing asynchronous and synchronous messages with support for buses, handlers, channels, and consumers. This library simplifies building scalable and decoupled applications by facilitating robust message handling pipelines while ensuring flexibility and reliability.
+A NestJS library for managing asynchronous and synchronous messages with support for buses, handlers, channels, and
+consumers. This library simplifies building scalable and decoupled applications by facilitating robust message handling
+pipelines while ensuring flexibility and reliability.
 
 ---
 
@@ -25,13 +27,14 @@ or
 ```bash
 yarn add @nestjstools/messaging @nestjstools/messaging-rabbitmq-extension
 ```
+
 ## RabbitMQ Integration: Messaging Configuration Example
 
 ---
 
 ```typescript
-import {MessagingModule, InMemoryChannelConfig} from '@nestjstools/messaging';
-import {SendMessageHandler} from './handlers/send-message.handler';
+import { MessagingModule, InMemoryChannelConfig } from '@nestjstools/messaging';
+import { SendMessageHandler } from './handlers/send-message.handler';
 import {
   ExchangeType,
   MessagingRabbitmqExtensionModule,
@@ -40,52 +43,52 @@ import {
 
 
 @Module({
-   imports: [
-      MessagingRabbitmqExtensionModule,
-      MessagingModule.forRoot({
-         buses: [
-            {
-               name: 'message.bus',
-               channels: ['my-channel'],
-            },
-            {
-               name: 'command-bus', //The naming is very flexible
-               channels: ['amqp-command'], //be sure if you defined same channels name as you defined below 
-            },
-            {
-               name: 'event-bus',
-               channels: ['amqp-event'],
-            },
-         ],
-         channels: [
-            new InMemoryChannelConfig({
-               name: 'my-channel',
-               middlewares: [],
-            }),
-            new RmqChannelConfig({
-               name: 'amqp-command',
-               connectionUri: 'amqp://guest:guest@localhost:5672/',
-               exchangeName: 'my_app_command.exchange',
-               bindingKeys: ['my_app.command.#'],
-               exchangeType: ExchangeType.TOPIC,
-               middlewares: [],
-               queue: 'my_app.command',
-               autoCreate: true, // Create exchange, queue & bind keys
-            }),
-            new RmqChannelConfig({
-               name: 'amqp-event',
-               connectionUri: 'amqp://guest:guest@localhost:5672/',
-               exchangeName: 'my_app_event.exchange',
-               bindingKeys: ['my_app_event.#'],
-               exchangeType: ExchangeType.TOPIC,
-               queue: 'my_app.event',
-               avoidErrorsForNotExistedHandlers: true, // We can avoid errors if we don't have handler yet for the event
-               autoCreate: true,
-            }),
-         ],
-         debug: true,
-      }),
-   ],
+  imports: [
+    MessagingRabbitmqExtensionModule,
+    MessagingModule.forRoot({
+      buses: [
+        {
+          name: 'message.bus',
+          channels: ['my-channel'],
+        },
+        {
+          name: 'command-bus', //The naming is very flexible
+          channels: ['amqp-command'], //be sure if you defined same channels name as you defined below 
+        },
+        {
+          name: 'event-bus',
+          channels: ['amqp-event'],
+        },
+      ],
+      channels: [
+        new InMemoryChannelConfig({
+          name: 'my-channel',
+          middlewares: [],
+        }),
+        new RmqChannelConfig({
+          name: 'amqp-command',
+          connectionUri: 'amqp://guest:guest@localhost:5672/',
+          exchangeName: 'my_app_command.exchange',
+          bindingKeys: ['my_app.command.#'],
+          exchangeType: ExchangeType.TOPIC,
+          middlewares: [],
+          queue: 'my_app.command',
+          autoCreate: true, // Create exchange, queue & bind keys
+        }),
+        new RmqChannelConfig({
+          name: 'amqp-event',
+          connectionUri: 'amqp://guest:guest@localhost:5672/',
+          exchangeName: 'my_app_event.exchange',
+          bindingKeys: ['my_app_event.#'],
+          exchangeType: ExchangeType.TOPIC,
+          queue: 'my_app.event',
+          avoidErrorsForNotExistedHandlers: true, // We can avoid errors if we don't have handler yet for the event
+          autoCreate: true,
+        }),
+      ],
+      debug: true,
+    }),
+  ],
 })
 export class AppModule {
 }
@@ -104,7 +107,8 @@ import { IMessageBus, MessageBus, RoutingMessage } from '@nestjstools/messaging'
 export class AppController {
   constructor(
     @MessageBus('command-bus') private commandBus: IMessageBus,
-  ) {}
+  ) {
+  }
 
   @Get('/rabbitmq')
   createUser(): string {
@@ -119,11 +123,18 @@ export class AppController {
 
 ```typescript
 import { CreateUser } from '../create-user';
-import { IMessageBus, IMessageHandler, MessageBus, MessageHandler, RoutingMessage, DenormalizeMessage } from '@nestjstools/messaging';
+import {
+  IMessageBus,
+  IMessageHandler,
+  MessageBus,
+  MessageHandler,
+  RoutingMessage,
+  DenormalizeMessage
+} from '@nestjstools/messaging';
 
 //This handler will received your rabbitmq messages with given routing-key
 @MessageHandler('my_app_command.create_user')
-export class CreateUserHandler implements IMessageHandler<CreateUser>{
+export class CreateUserHandler implements IMessageHandler<CreateUser> {
 
   handle(message: CreateUser): Promise<void> {
     console.log(message);
@@ -135,20 +146,31 @@ export class CreateUserHandler implements IMessageHandler<CreateUser>{
 ## Mapping Messages in RabbitMQ Channel
 
 ### Topic Exchange
-For optimal routing, it's recommended to use routing keys as part of the binding key. For example, if you bind a queue with the key `my_app.command.#`, messages with routing keys like `my_app.command.domain.action` will automatically be routed to that queue. This ensures that any message with a routing key starting with `my_app.command` is directed to the appropriate queue.
+
+For optimal routing, it's recommended to use routing keys as part of the binding key. For example, if you bind a queue
+with the key `my_app.command.#`, messages with routing keys like `my_app.command.domain.action` will automatically be
+routed to that queue. This ensures that any message with a routing key starting with `my_app.command` is directed to the
+appropriate queue.
 Here's a more concise and clear version of your explanation:
 
 ### Direct Exchange
-Ensure your queue has defined binding keys, as messages will be routed to queues based on these keys. If no binding keys are defined, the routing key in RabbitMQ will default to the routing key specified in the handler.
+
+Ensure your queue has defined binding keys, as messages will be routed to queues based on these keys. If no binding keys
+are defined, the routing key in RabbitMQ will default to the routing key specified in the handler.
 
 ### Fanout Exchange
-The Fanout Exchange broadcasts messages to all bound queues, ignoring the routing key. This type of exchange is useful for scenarios where you need to distribute the same message to multiple consumers.
+
+The Fanout Exchange broadcasts messages to all bound queues, ignoring the routing key. This type of exchange is useful
+for scenarios where you need to distribute the same message to multiple consumers.
 
 ### Additional
-* You can override message routing using `AmqpMessageOptions`. This allows sending a message to a specified exchange and routing it with a custom key.
+
+* You can override message routing using `AmqpMessageOptions`. This allows sending a message to a specified exchange and
+  routing it with a custom key.
     ```typescript
     this.messageBus.dispatch(new RoutingMessage(new SendMessage('Hello Rabbit!'), 'app.command.execute', new AmqpMessageOptions('exchange_name', 'rabbitmq_routing_key_to_queue')));
     ```
+
 ---
 
 ## 📨 Communicating Beyond a NestJS Application (Cross-Language Messaging)
@@ -165,8 +187,11 @@ The Fanout Exchange broadcasts messages to all bound queues, ignoring the routin
    ```
 
 3. **You're Done!**
-   Once the message is published with the correct routing key, it will be automatically routed to the appropriate handler within the NestJS application.
+   Once the message is published with the correct routing key, it will be automatically routed to the appropriate
+   handler within the NestJS application.
+
 ---
+
 ## Configuration options
 
 ### AmqpChannel
@@ -185,5 +210,7 @@ The Fanout Exchange broadcasts messages to all bound queues, ignoring the routin
 | **`enableConsumer`**                   | Enables or disables the consumer for this channel.                                         | `true`            |
 | **`avoidErrorsForNotExistedHandlers`** | Avoid errors if no handler is available for the message.                                   | `false`           |
 | **`deadLetterQueueFeature`**           | Enables a dead-letter queue to capture messages that could not be processed due to errors. | `false`           |
+| **`retryMessage`**                     | Number of times to retry a message before sending it to the dead letter queue.             |                   |
 
-This table provides a structured overview of the **`MessagingModule.forRoot`** configuration, with details about each property within **buses** and **channels** and their corresponding default values.
+This table provides a structured overview of the **`MessagingModule.forRoot`** configuration, with details about each
+property within **buses** and **channels** and their corresponding default values.
