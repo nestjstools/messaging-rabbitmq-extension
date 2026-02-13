@@ -8,7 +8,9 @@ import { MessageConsumer } from '@nestjstools/messaging';
 import { ConsumerDispatchedMessageError } from '@nestjstools/messaging';
 import { RabbitmqMigrator } from '../migrator/rabbitmq.migrator';
 import { ChannelWrapper } from 'amqp-connection-manager';
-import { Channel, ConsumeMessage, Options } from 'amqplib';
+import { Channel, ConsumeMessage } from 'amqplib';
+import { MessageRetrierVisitor } from './message-retrier.visitor';
+import { MessageDeadLetterVisitor } from './message-dead-letter.visitor';
 
 @Injectable()
 @MessageConsumer(AmqpChannel)
@@ -17,7 +19,11 @@ export class RabbitmqMessagingConsumer
   private channel?: AmqpChannel = undefined;
   private amqpChannel: ChannelWrapper;
 
-  constructor(private readonly rabbitMqMigrator: RabbitmqMigrator) {
+  constructor(
+    private readonly rabbitMqMigrator: RabbitmqMigrator,
+    private readonly messageRetrier: MessageRetrierVisitor,
+    private readonly messageDeadLetter: MessageDeadLetterVisitor,
+  ) {
   }
 
   async consume(
@@ -80,43 +86,16 @@ export class RabbitmqMessagingConsumer
     errored: ConsumerDispatchedMessageError,
     channel: AmqpChannel,
   ): Promise<void> {
+    if (!this.amqpChannel) {
+      return Promise.resolve();
+    }
+
     if (this.channel.config.retryMessage) {
-      const limit = this.channel.config.retryMessage;
-      const retryCount = errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT] ?? 0;
-
-      if (retryCount < limit) {
-        const newRetryCount = retryCount + 1;
-
-        await this.amqpChannel.publish(
-          channel.config.exchangeName,
-          errored.dispatchedConsumerMessage.routingKey,
-          Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
-          {
-            headers: {
-              [RABBITMQ_HEADER_RETRY_COUNT]: newRetryCount,
-            },
-          } as Options.Publish,
-        );
-
-        return Promise.resolve();
-      }
+      return this.messageRetrier.retryMessage(errored, channel, this.amqpChannel);
     }
 
     if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
-      const exchange = 'dead_letter.exchange';
-      const routingKey = `${channel.config.queue}_dead_letter`;
-
-      await this.amqpChannel.publish(
-        exchange,
-        routingKey,
-        Buffer.from(JSON.stringify(errored.dispatchedConsumerMessage.message)),
-        {
-          headers: {
-            [RABBITMQ_HEADER_ROUTING_KEY]:
-            errored.dispatchedConsumerMessage.routingKey,
-          },
-        } as Options.Publish,
-      );
+      return this.messageDeadLetter.sendToDeadLetter(errored, channel, this.amqpChannel);
     }
   }
 
