@@ -41,6 +41,16 @@ export class RmqChannelConfig extends ChannelConfig {
    */
   public readonly retryMessage?: number;
 
+  /**
+   * @description Time to live for retry messages in milliseconds. After this time, messages will be moved from the retry queue back to the main exchange for reprocessing. Only applicable if `retryMessage` is set. Default is 1000 ms.
+   */
+  public readonly retryMessageTtl?: number;
+
+  /**
+   * @description Whether to forcefully recreate the retry queue on application startup. This can be useful during development to ensure a clean state, but should be used with caution in production environments as it will delete all messages in the retry queue.
+   */
+  public readonly forceRecreateRetryQueue?: boolean;
+
   constructor({
     name,
     connectionUri,
@@ -55,6 +65,8 @@ export class RmqChannelConfig extends ChannelConfig {
     middlewares,
     normalizer,
     retryMessage,
+    retryMessageTtl,
+    forceRecreateRetryQueue,
   }: RmqChannelConfig) {
     super(
       name,
@@ -71,6 +83,8 @@ export class RmqChannelConfig extends ChannelConfig {
     this.autoCreate = autoCreate ?? true;
     this.deadLetterQueueFeature = deadLetterQueueFeature ?? false;
     this.retryMessage = retryMessage;
+    this.retryMessageTtl = retryMessageTtl;
+    this.forceRecreateRetryQueue = forceRecreateRetryQueue;
   }
 }
 

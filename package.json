@@ -43,12 +43,11 @@
     "start:debug": "node_modules/.bin/nest start --debug --watch",
     "start:prod": "node dist/index",
     "lint": "node_modules/.bin/eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "node_modules/.bin/jest",
     "ci": "yarn prettier",
+    "test": "npm run test:unit",
     "test:watch": "node_modules/.bin/jest --watch",
-    "test:cov": "node_modules/.bin/jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "node_modules/.bin/jest --config ./test/jest-e2e.json"
+    "test:unit": "node_modules/.bin/jest --config ./test/jest-unit.json"
   },
   "dependencies": {
     "amqp-connection-manager": "^5.0.0",

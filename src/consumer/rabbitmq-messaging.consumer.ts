@@ -91,7 +91,12 @@ export class RabbitmqMessagingConsumer
     }
 
     if (this.channel.config.retryMessage) {
-      return this.messageRetrier.retryMessage(errored, channel, this.amqpChannel);
+      const limit = channel.config.retryMessage;
+      const currentRetryCount = errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT];
+
+      if (currentRetryCount < limit) {
+        return this.messageRetrier.retryMessage(errored, channel, this.amqpChannel, currentRetryCount);
+      }
     }
 
     if (channel.config.deadLetterQueueFeature && this.amqpChannel) {
