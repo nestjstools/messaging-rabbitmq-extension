@@ -1,6 +1,6 @@
 {
   "name": "@nestjstools/messaging-rabbitmq-extension",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "Extension to handle messages and dispatch them over AMQP protocol",
   "author": "Sebastian Iwanczyszyn",
   "license": "MIT",
@@ -16,17 +16,21 @@
     "url": "git+https://github.com/nestjstools/messaging-rabbitmq-extension"
   },
   "keywords": [
-    "nestjs-tools",
     "nestjs",
-    "distributed",
-    "messaging",
-    "nestjs-messaging",
-    "message-bus",
-    "service-bus",
-    "microservices",
+    "nestjs rabbitmq",
+    "nestjs rabbitmq messaging",
+    "nestjs rabbitmq message bus",
+    "nestjs rabbitmq service bus",
+    "nestjs rabbitmq microservices",
     "rabbitmq",
-    "rabbitmq-messages",
-    "nestjs-messaging-rabbitmq"
+    "amqp",
+    "rabbitmq topic exchange",
+    "rabbitmq dead letter queue",
+    "rabbitmq retry",
+    "message broker",
+    "distributed systems",
+    "event driven architecture",
+    "microservices architecture"
   ],
   "files": [
     "lib",

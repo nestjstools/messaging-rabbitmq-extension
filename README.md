@@ -1,18 +1,33 @@
 <p align="center">
-    <image src="nestjstools-logo.png" width="400">
+    <image src="nestjstools-logo.png" width="400" alt="NestJSTools Logo" />
 </p>
 
-# @nestjstools/messaging-rabbitmq-extension
+# NestJS RabbitMQ Integration – Messaging Extension for Distributed Systems
+
+Official RabbitMQ channel adapter for the NestJSTools Messaging library.
+
+This extension integrates **RabbitMQ (AMQP)** with the NestJS message bus abstraction, enabling reliable messaging, topic exchanges, dead-letter queues, retries.
+
+Designed for scalable, event-driven and distributed architectures.
 
 A NestJS library for managing asynchronous and synchronous messages with support for buses, handlers, channels, and
 consumers. This library simplifies building scalable and decoupled applications by facilitating robust message handling
 pipelines while ensuring flexibility and reliability.
 
+### The RabbitMQ extension supports:
+
+- Dead Letter Queue (DLQ)
+- Message retry with configurable TTL
+- Automatic retry queue creation
+- Configurable retry attempts
+- Safe failure handling
+
 ---
 
 ## Documentation
 
-https://nestjstools.gitbook.io/nestjstools-messaging-docs
+* https://docs.nestjstools.com/messaging
+* https://nestjstools.com
 
 ---
 
@@ -214,5 +229,8 @@ for scenarios where you need to distribute the same message to multiple consumer
 | **`retryMessageTtl`**                  | Time to live for retry messages in milliseconds. After this time, messages will be moved from the retry queue back to the main exchange for reprocessing. Only applicable if `retryMessage` is set.                                                 | `1000`            |
 | **`forceRecreateRetryQueue`**          | Whether to forcefully recreate the retry queue on application startup. This can be useful during development to ensure a clean state, but should be used with caution in production environments as it will delete all messages in the retry queue. |                   |
 
-This table provides a structured overview of the **`MessagingModule.forRoot`** configuration, with details about each
-property within **buses** and **channels** and their corresponding default values.
+# Keywords
+
+nestjs rabbitmq integration, nestjs amqp, nestjs message bus rabbitmq,
+nestjs rabbitmq microservices, rabbitmq dead letter queue nestjs,
+nestjs event driven architecture, distributed systems rabbitmq
