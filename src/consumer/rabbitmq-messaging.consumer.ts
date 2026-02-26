@@ -3,8 +3,7 @@ import {
   RABBITMQ_HEADER_RETRY_COUNT,
   RABBITMQ_HEADER_ROUTING_KEY,
 } from '../const';
-import { IMessagingConsumer } from '@nestjstools/messaging';
-import { ConsumerMessageDispatcher } from '@nestjstools/messaging';
+import { ConsumerMessageBus, IMessagingConsumer } from '@nestjstools/messaging';
 import { ConsumerMessage } from '@nestjstools/messaging';
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { MessageConsumer } from '@nestjstools/messaging';
@@ -18,8 +17,7 @@ import { MessageDeadLetterVisitor } from './message-dead-letter.visitor';
 @Injectable()
 @MessageConsumer(AmqpChannel)
 export class RabbitmqMessagingConsumer
-  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy
-{
+  implements IMessagingConsumer<AmqpChannel>, OnModuleDestroy {
   private channel?: AmqpChannel = undefined;
   private amqpChannel: ChannelWrapper;
 
@@ -27,10 +25,11 @@ export class RabbitmqMessagingConsumer
     private readonly rabbitMqMigrator: RabbitmqMigrator,
     private readonly messageRetrier: MessageRetrierVisitor,
     private readonly messageDeadLetter: MessageDeadLetterVisitor,
-  ) {}
+  ) {
+  }
 
   async consume(
-    dispatcher: ConsumerMessageDispatcher,
+    dispatcher: ConsumerMessageBus,
     channel: AmqpChannel,
   ): Promise<void> {
     this.channel = channel;
@@ -72,16 +71,13 @@ export class RabbitmqMessagingConsumer
               | string
               | undefined) ?? msg.fields.routingKey;
 
-          if (dispatcher.isReady()) {
             await dispatcher.dispatch(
               new ConsumerMessage(payload as object, routingKey, {
                 [RABBITMQ_HEADER_RETRY_COUNT]: retryCount,
               }),
             );
+
             rawChannel.ack(msg);
-          } else {
-            rawChannel.nack(msg, false, true);
-          }
         },
         { noAck: false },
       );
@@ -93,13 +89,14 @@ export class RabbitmqMessagingConsumer
     channel: AmqpChannel,
   ): Promise<void> {
     if (!this.amqpChannel) {
-      return Promise.resolve();
+      return;
     }
 
-    if (this.channel.config.retryMessage) {
+    if (channel.config.retryMessage) {
       const limit = channel.config.retryMessage;
       const currentRetryCount =
-        errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT];
+        errored.dispatchedConsumerMessage.metadata[RABBITMQ_HEADER_RETRY_COUNT] ??
+        0;
 
       if (currentRetryCount < limit) {
         return this.messageRetrier.retryMessage(
