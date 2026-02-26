@@ -51,6 +51,11 @@ export class RmqChannelConfig extends ChannelConfig {
    */
   public readonly forceRecreateRetryQueue?: boolean;
 
+  /**
+   * @description Prefetch count for the channel, which limits the number of unacknowledged messages that can be sent to the consumer at a time. This can help improve performance and prevent overwhelming the consumer with too many messages. Default is 1.
+   */
+  public readonly qos?: number;
+
   constructor({
     name,
     connectionUri,
@@ -67,6 +72,7 @@ export class RmqChannelConfig extends ChannelConfig {
     retryMessage,
     retryMessageTtl,
     forceRecreateRetryQueue,
+    qos,
   }: RmqChannelConfig) {
     super(
       name,
@@ -85,6 +91,7 @@ export class RmqChannelConfig extends ChannelConfig {
     this.retryMessage = retryMessage;
     this.retryMessageTtl = retryMessageTtl;
     this.forceRecreateRetryQueue = forceRecreateRetryQueue;
+    this.qos = qos ?? 1;
   }
 }
 
