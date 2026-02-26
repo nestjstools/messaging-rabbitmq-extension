@@ -44,6 +44,7 @@ describe('RabbitmqMessagingConsumer', () => {
     const createChannel = (overrides?: Partial<AmqpChannel>): AmqpChannel => {
       const rawChannel = {
         consume: jest.fn(),
+        prefetch: jest.fn().mockResolvedValue(undefined),
         ack: jest.fn(),
         nack: jest.fn(),
       } as unknown as jest.Mocked<Channel>;
@@ -58,6 +59,7 @@ describe('RabbitmqMessagingConsumer', () => {
       const channel = {
         config: {
           queue: 'test.queue',
+          qos: 10,
           retryMessage: 3,
           deadLetterQueueFeature: true,
         },
@@ -111,11 +113,13 @@ describe('RabbitmqMessagingConsumer', () => {
       const wrapper = channel.createChannelWrapper() as unknown as jest.Mocked<ChannelWrapper>;
       const rawChannel = {
         consume: jest.fn(),
+        prefetch: jest.fn().mockResolvedValue(undefined),
         ack: jest.fn(),
         nack: jest.fn(),
       } as unknown as jest.Mocked<Channel>;
       const setupFn = (wrapper.addSetup as jest.Mock).mock.calls[0][0];
       await setupFn(rawChannel);
+      expect(rawChannel.prefetch).toHaveBeenCalledWith(10);
 
       const consumeHandler = (rawChannel.consume as jest.Mock).mock.calls[0][1] as (
         msg: ConsumeMessage | null,
@@ -147,6 +151,7 @@ describe('RabbitmqMessagingConsumer', () => {
       const wrapper = channel.createChannelWrapper() as unknown as jest.Mocked<ChannelWrapper>;
       const rawChannel = {
         consume: jest.fn(),
+        prefetch: jest.fn().mockResolvedValue(undefined),
         ack: jest.fn(),
         nack: jest.fn(),
       } as unknown as jest.Mocked<Channel>;
@@ -186,6 +191,7 @@ describe('RabbitmqMessagingConsumer', () => {
       const wrapper = channel.createChannelWrapper() as unknown as jest.Mocked<ChannelWrapper>;
       const rawChannel = {
         consume: jest.fn(),
+        prefetch: jest.fn().mockResolvedValue(undefined),
         ack: jest.fn(),
         nack: jest.fn(),
       } as unknown as jest.Mocked<Channel>;
