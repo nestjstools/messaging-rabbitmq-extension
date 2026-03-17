@@ -46,6 +46,7 @@ export class AmqpMessageBus implements IMessageBus {
       Buffer.from(JSON.stringify(amqpMessage.message)),
       {
         headers: amqpMessage.envelope.headers,
+        persistent: amqpMessage.envelope.persistent,
       },
     );
   }
@@ -88,7 +89,8 @@ export class AmqpMessageBus implements IMessageBus {
         options.exchangeName ?? this.amqpChannel.config.exchangeName,
       )
       .withRoutingKey(options.routingKey ?? this.getRoutingKey(message))
-      .withHeaders(options.headers);
+      .withHeaders(options.headers)
+      .withEnvelopeOptions(options.envelopeOptions);
 
     return messageBuilder;
   }

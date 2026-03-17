@@ -4,6 +4,7 @@ export class AmqpMessageBuilder {
     private routingKey?: string,
     private headers?: { [key: string]: any },
     private message?: object,
+    private persistent?: boolean,
   ) {}
 
   static create(): AmqpMessageBuilder {
@@ -38,6 +39,11 @@ export class AmqpMessageBuilder {
     return this;
   }
 
+  withPersistent(persistent: boolean): AmqpMessageBuilder {
+    this.persistent = persistent;
+    return this;
+  }
+
   buildMessage(): AmqpMessage {
     if (!this.exchangeName) {
       throw new Error('Exchange name must be defined');
@@ -54,6 +60,7 @@ export class AmqpMessageBuilder {
     return {
       message: this.message,
       envelope: {
+        persistent: this.persistent ?? false,
         exchange: this.exchangeName,
         routingKey: this.routingKey,
         headers: this.headers ?? {},
@@ -68,5 +75,6 @@ export interface AmqpMessage {
     exchange: string;
     routingKey: string;
     headers?: { [key: string]: any };
+    persistent?: boolean;
   };
 }

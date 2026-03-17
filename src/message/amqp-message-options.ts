@@ -8,5 +8,6 @@ export class AmqpMessageOptions implements MessageOptions {
     public readonly middlewares: Middleware[] = [],
     public readonly headers: { [key: string]: string } = {},
     public readonly avoidErrorsWhenNotExistedHandler: boolean = undefined,
+    public readonly persistent: boolean = false,
   ) {}
 }
